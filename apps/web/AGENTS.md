@@ -1,3 +1,7 @@
+# Web application instructions
+
+The root `AGENTS.md` branch, task, commit, pull-request, security, and beta-status rules are mandatory for all work in this directory.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
