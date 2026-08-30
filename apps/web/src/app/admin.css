@@ -1,0 +1,40 @@
+.enterprise-form label {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 14px;
+  color: #56625b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.enterprise-form input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #dce2dc;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #25302c;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.enterprise-form input:focus {
+  border-color: #6f9279;
+  box-shadow: 0 0 0 3px rgba(80, 119, 91, 0.12);
+}
+
+.enterprise-form input::placeholder {
+  color: #a0a7a2;
+  font-weight: 400;
+}
+
+.dynamic-location label {
+  margin: 0;
+}
+
+.dynamic-location input {
+  padding: 10px 11px;
+}

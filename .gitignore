@@ -1,0 +1,27 @@
+# Dependencies and framework output
+node_modules/
+.next/
+out/
+
+# Environment and local-only files
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and coverage
+*.log
+coverage/
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Docker runtime data
+.docker/
+postgres-data/
+
+# Large local source recordings (not required by the application)
+assets/reference/*.wav
+assets/reference/*.m4a
