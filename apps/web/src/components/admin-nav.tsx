@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, CalendarDays, ChartNoAxesColumn, LogOut, PackageOpen, Star } from "lucide-react";
+import { Building2, CalendarDays, ChartNoAxesColumn, LogOut, MessageSquareText, PackageOpen, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function AdminNav({ active }: { active: "enterprises" | "packages" | "calendar" | "operations" | "quality" }) {
+export function AdminNav({ active }: { active: "enterprises" | "packages" | "calendar" | "operations" | "quality" | "feedback" }) {
   const router = useRouter();
   const links = [
     { key: "enterprises", href: "/admin", label: "Enterprises", icon: Building2 },
@@ -13,6 +13,7 @@ export function AdminNav({ active }: { active: "enterprises" | "packages" | "cal
     { key: "calendar", href: "/admin/calendar", label: "Calendar", icon: CalendarDays },
     { key: "operations", href: "/admin/operations", label: "Operations", icon: ChartNoAxesColumn },
     { key: "quality", href: "/admin/quality", label: "Quality", icon: Star },
+    { key: "feedback", href: "/admin/feedback", label: "Feedback", icon: MessageSquareText },
   ] as const;
   const signOut = () => fetch("/api/auth/logout", { method: "POST" }).then(() => router.push("/login"));
 
