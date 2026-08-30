@@ -3,6 +3,7 @@
 import { Building2, MapPin, Plus, Trash2, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { AdminNav } from "@/components/admin-nav";
+import { clientErrorMessage } from "@/lib/client-errors";
 
 type Location = { name: string; code: string; address: string };
 export type Enterprise = { id: string; name: string; slug: string; status: string; poc_name: string; poc_email: string; location_count: number; admin_count: number };
@@ -35,7 +36,7 @@ export function AdminOnboarding({ fullName, initialEnterprises }: { fullName: st
     const payload = { name: form.get("name"), slug: form.get("slug"), pocName: form.get("pocName"), pocPhone: form.get("pocPhone"), pocEmail: form.get("pocEmail"), locations, admin: { fullName: form.get("adminFullName"), username: form.get("adminUsername"), password: form.get("adminPassword") } };
     const response = await fetch("/api/admin/enterprises", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json(); setSaving(false);
-    if (!response.ok) return setStatus(`Could not create the enterprise: ${data.error}`);
+    if (!response.ok) return setStatus(clientErrorMessage(data.error, "The enterprise could not be created."));
     closeForm(); await loadEnterprises();
   }
 
