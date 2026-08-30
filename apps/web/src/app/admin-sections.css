@@ -121,9 +121,23 @@
 .option-row > b { color: #405d4a; font-size: 11px; }
 .option-row > button { border: 0; background: none; color: #a45d48; }
 .option-row > button:disabled { cursor: not-allowed; opacity: .25; }
+.form-section-title button:disabled { cursor: not-allowed; opacity: .45; }
 
-@media (max-width: 700px) {
+.admin-mobile-shell { display: none; }
+.admin-mobile-brand { display: flex; min-width: 0; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #e3e8e2; background: #fffefb; }
+.admin-mobile-brand img { object-fit: contain; object-position: left center; }
+.admin-mobile-brand span { overflow: hidden; color: #68746c; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.admin-mobile-brand button { display: grid; place-items: center; margin-left: auto; padding: 8px; border: 0; background: none; color: #506158; }
+.review-photos { flex-wrap: wrap; }
+
+@media (max-width: 800px) {
+  .admin-mobile-shell { display: block; position: sticky; top: 0; z-index: 10; min-width: 0; background: #fffefb; box-shadow: 0 1px 8px rgba(31, 51, 41, .06); }
+  .admin-mobile-shell nav { display: flex; max-width: 100vw; overflow-x: auto; padding: 0 8px; scrollbar-width: none; }
+  .admin-mobile-shell nav::-webkit-scrollbar { display: none; }
+  .admin-mobile-shell nav a { display: grid; flex: 0 0 72px; place-items: center; gap: 4px; padding: 9px 4px 8px; border-bottom: 2px solid transparent; color: #758078; font-size: 9px; font-weight: 700; }
+  .admin-mobile-shell nav a.active { border-bottom-color: #f26638; color: #294b39; }
+  .enterprise-mobile-shell .admin-mobile-brand { min-height: 59px; }
   .schedule-card { grid-template-columns: 1fr; gap: 8px; }
   .option-row { grid-template-columns: 62px 1fr 32px; }
-  .roster-actions{margin:0 0 16px;justify-content:flex-start;flex-wrap:wrap}.employee-row{grid-template-columns:1.2fr 1fr .5fr}.employee-row>span:nth-child(3),.employee-head>span:nth-child(3){display:none}.operation-row{grid-template-columns:.8fr 1.2fr .4fr}.operation-row>span:nth-child(3),.operation-row>span:nth-child(4),.operation-head>span:nth-child(3),.operation-head>span:nth-child(4){display:none}.employee-meal-head{flex-direction:column}.employee-app h1{font-size:32px}
+  .roster-actions{margin:0 0 16px;justify-content:flex-start;flex-wrap:wrap}.employee-row{grid-template-columns:1.2fr 1fr .5fr}.employee-row>span:nth-child(3),.employee-head>span:nth-child(3){display:none}.operation-row{grid-template-columns:.8fr 1.2fr .4fr}.operation-row>span:nth-child(3),.operation-row>span:nth-child(4),.operation-head>span:nth-child(3),.operation-head>span:nth-child(4){display:none}.employee-meal-head{flex-direction:column}.employee-app h1{font-size:32px}.enterprise-form>header,.enterprise-form>section{padding-left:20px;padding-right:20px}.enterprise-form>footer{padding:14px 20px}.form-error-inline{margin-left:20px;margin-right:20px}.dynamic-location{grid-template-columns:1fr 32px}.dynamic-location>span{display:none}.employee-app>header{gap:10px;padding-left:14px;padding-right:14px}.employee-app>header img{width:96px;height:auto}.employee-app>header div{min-width:0}.employee-app>header div b,.employee-app>header div span{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.employee-app>main{padding:30px 14px 55px}.employee-meal,.employee-review,.employee-empty{padding:19px}.review-photos img{width:calc(50% - 4px);height:auto;aspect-ratio:4/3}
 }
