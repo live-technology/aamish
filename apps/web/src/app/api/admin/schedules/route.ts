@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     if (!body.enterpriseId || !body.scheduleDate || !body.cutoffTime || !Array.isArray(body.menuIds) || body.menuIds.length < 1) return NextResponse.json({ error: "MISSING_REQUIRED_FIELDS", requestId }, { status: 400 });
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
+    if (body.scheduleDate < today) return NextResponse.json({ error: "PAST_MEAL_DATE", requestId }, { status: 400 });
+    if (Number.isNaN(new Date(body.cutoffTime).valueOf()) || new Date(body.cutoffTime) <= new Date()) return NextResponse.json({ error: "CUTOFF_MUST_BE_FUTURE", requestId }, { status: 400 });
     const uniqueMenuIds = [...new Set(body.menuIds)] as string[];
     if (uniqueMenuIds.length !== body.menuIds.length) return NextResponse.json({ error: "DUPLICATE_PACKAGE_OPTION", requestId }, { status: 400 });
     const result = await db().begin(async (transaction) => {
@@ -46,6 +49,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ...result, requestId }, { status: 201 });
   } catch (error) {
     logError("schedule.publish_failed", error, { requestId, actorUserId: session.userId });
+    if (typeof error === "object" && error && "code" in error && error.code === "23505") return NextResponse.json({ error: "SCHEDULE_ALREADY_EXISTS", requestId }, { status: 409 });
     return NextResponse.json({ error: "SCHEDULE_PUBLISH_FAILED", requestId }, { status: 500 });
   }
 }
