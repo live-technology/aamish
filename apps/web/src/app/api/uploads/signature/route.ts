@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
 
   const { kind } = await request.json();
-  if (kind !== "menu" && kind !== "review") return NextResponse.json({ error: "INVALID_UPLOAD_KIND" }, { status: 400 });
+  if (kind !== "menu" && kind !== "review" && kind !== "feedback") return NextResponse.json({ error: "INVALID_UPLOAD_KIND" }, { status: 400 });
 
   const config = cloudinaryConfig();
   if (!config) return NextResponse.json({ error: "CLOUDINARY_NOT_CONFIGURED" }, { status: 503 });
