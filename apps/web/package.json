@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "bun test",
-    "bootstrap:admin": "bun scripts/bootstrap-admin.ts"
+    "bootstrap:admin": "bun scripts/bootstrap-admin.ts",
+    "feedback:transcribe": "bun scripts/transcribe-feedback.ts"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",

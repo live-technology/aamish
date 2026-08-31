@@ -64,6 +64,16 @@ Requirements: Docker Desktop and Bun.
 
 Never commit `.env`, real credentials, exported user data, or review photos.
 
+### Transcribe voice feedback
+
+After applying `packages/db/migrations/007_feedback_transcriptions.sql`, process all pending voice feedback from `apps/web`:
+
+```bash
+bun --env-file=../../.env run feedback:transcribe
+```
+
+Use `-- --limit 5` to cap a batch, `-- --id <feedback-uuid>` to target one submission, or add `--force` to intentionally replace an existing transcript. Add `--show-content` only when transcript content is safe to print in the current terminal. The command stores transcripts on `platform_feedback` and appends Gemini token counts to `ai_usage_events`.
+
 ## Validation
 
 Run application checks from `apps/web`:
