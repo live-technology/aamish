@@ -1,0 +1,1 @@
+import{describe,expect,test}from"bun:test";import{dailyCsat}from"./csat";describe("dailyCsat",()=>{test("groups ratings by meal date",()=>expect(dailyCsat([{schedule_date:"2026-08-30",rating:3},{schedule_date:"2026-08-30",rating:5},{schedule_date:"2026-08-31",rating:2}])).toEqual([{date:"2026-08-30",count:2,average:4},{date:"2026-08-31",count:1,average:2}]))});
