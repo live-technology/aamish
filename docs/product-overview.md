@@ -45,6 +45,7 @@ This repository contains the architecture, product specifications, user journey 
 | **User Journeys & Flows** | Detailed end-to-end user journeys, step-by-step actions, and lifecycle state machines. | [user-journeys.md](user-journeys.md) |
 | **Data Models & Schema** | Relational database schema, ER diagram, data dictionary, and kitchen aggregation SQL queries. | [data-models.md](data-models.md) |
 | **API Specification** | Comprehensive REST API endpoints, request/response JSON payloads, and error codes. | [api-specification.md](api-specification.md) |
+| **UX Redesign Baseline** | Current capability audit, proposed information architecture, design-system contract, and delivery process. | [redesign/ux-audit.md](redesign/ux-audit.md) |
 
 ---
 

@@ -113,6 +113,10 @@ This beta may be deployed only as a protected internal testing environment.
 - [API specification](docs/api-specification.md)
 - [Development notes](docs/development.md)
 - [Beta feedback analysis and work plan](docs/feedback-analysis-and-workplan-2026-09-01.md)
+- [UX audit and capability-preservation contract](docs/redesign/ux-audit.md)
+- [Redesigned information architecture](docs/redesign/information-architecture.md)
+- [Design-system contract](docs/redesign/design-system.md)
+- [Lean redesign delivery system](docs/redesign/delivery-system.md)
 - [Contribution and PR rules](AGENTS.md)
 
 ## Production readiness
