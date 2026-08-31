@@ -12,6 +12,8 @@ const messages: Record<string, string> = {
   INVALID_REVIEW: "Choose a rating and check the review details.",
   MISSING_REQUIRED_FIELDS: "Complete all required fields.",
   PACKAGE_CREATION_FAILED: "The package could not be created. Check the details and try again.",
+  PACKAGE_NOT_FOUND: "That package no longer exists.",
+  PACKAGE_UPDATE_FAILED: "The package could not be updated. Check the details and try again.",
   PACKAGE_IMAGE_REQUIRED: "Choose a package image.",
   PAST_MEAL_DATE: "Choose today or a future meal date.",
   REVIEW_NOT_AVAILABLE: "This meal is not available for review. Reviews require an opted-in meal from the last seven days.",
