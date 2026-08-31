@@ -166,6 +166,18 @@
 }
 
 .roster-actions { display: flex; justify-content: flex-end; gap: 9px; margin: -18px 0 20px; }
+.admin-sidebar nav button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 11px; border: 0; border-radius: 8px; background: none; color: #768079; font-size: 13px; font-weight: 700; text-align: left; }
+.admin-sidebar nav button.active { background: #eaf1e7; color: var(--green); }
+.enterprise-orders { overflow: hidden; border: 1px solid #e0e6df; border-radius: 12px; background: #fffefb; }
+.enterprise-order-row { display: grid; grid-template-columns: .75fr 1fr 1.8fr .4fr; gap: 16px; align-items: center; min-height: 66px; padding: 0 18px; border-bottom: 1px solid #e7ebe6; color: #59665f; font-size: 11px; }
+.enterprise-order-row:last-child { border-bottom: 0; }
+.enterprise-order-row b,.enterprise-order-row small { display: block; }
+.enterprise-order-row b { color: #34473d; font-size: 11px; }
+.enterprise-order-row small { margin-top: 4px; color: #89928d; font-size: 9px; }
+.enterprise-order-row strong { color: #274b39; font: 22px Georgia, serif; text-align: center; }
+.enterprise-order-head { min-height: 41px; background: #f1f4ef; color: #879189; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.enterprise-mobile-shell nav button { flex: 1; padding: 10px; border: 0; border-bottom: 2px solid transparent; background: none; color: #7a857e; font-size: 10px; font-weight: 800; }
+.enterprise-mobile-shell nav button.active { border-bottom-color: #f26638; color: #27483a; }
 .roster-actions button, .roster-actions label { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #d9e0da; border-radius: 8px; background: #fff; color: #496153; font-size: 11px; font-weight: 800; cursor: pointer; }
 .roster-actions input, .upload-button input { display: none; }
 .action-message, .employee-message { padding: 11px 14px; border-radius: 8px; background: #edf4eb; color: #42644c; font-size: 12px; }
@@ -221,5 +233,7 @@
   .enterprise-mobile-shell .admin-mobile-brand { min-height: 59px; }
   .schedule-card { grid-template-columns: 1fr; gap: 8px; }
   .option-row { grid-template-columns: 62px 1fr 32px; }
+  .enterprise-order-row { grid-template-columns: .8fr 1.6fr .35fr; padding: 0 12px; gap: 10px; }
+  .enterprise-order-row>span:nth-child(2),.enterprise-order-head>span:nth-child(2) { display: none; }
   .roster-actions{margin:0 0 16px;justify-content:flex-start;flex-wrap:wrap}.employee-row{grid-template-columns:1.2fr 1fr .5fr}.employee-row>span:nth-child(3),.employee-head>span:nth-child(3){display:none}.operation-row{grid-template-columns:.8fr 1.2fr .4fr}.operation-row>span:nth-child(3),.operation-row>span:nth-child(4),.operation-head>span:nth-child(3),.operation-head>span:nth-child(4){display:none}.employee-meal-head{flex-direction:column}.employee-app h1{font-size:32px}.enterprise-form>header,.enterprise-form>section{padding-left:20px;padding-right:20px}.enterprise-form>footer{padding:14px 20px}.form-error-inline{margin-left:20px;margin-right:20px}.dynamic-location{grid-template-columns:1fr 32px}.dynamic-location>span{display:none}.employee-app>header{gap:10px;padding-left:14px;padding-right:14px}.employee-app>header img{width:96px;height:auto}.employee-app>header div{min-width:0}.employee-app>header div b,.employee-app>header div span{max-width:135px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.employee-app>main{padding:30px 14px 55px}.employee-meal,.employee-review,.employee-empty{padding:19px}.review-photos img{width:calc(50% - 4px);height:auto;aspect-ratio:4/3}
 }
