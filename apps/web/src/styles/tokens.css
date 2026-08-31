@@ -1,0 +1,50 @@
+:root {
+  --aamish-surface-canvas: #f6f5f0;
+  --aamish-surface-default: #fffefa;
+  --aamish-surface-subtle: #f0f2ed;
+  --aamish-surface-raised: #ffffff;
+  --aamish-text-primary: #17251f;
+  --aamish-text-secondary: #526159;
+  --aamish-text-muted: #748078;
+  --aamish-border-default: #dce2dc;
+  --aamish-border-strong: #bcc7bf;
+  --aamish-action-primary: #214b39;
+  --aamish-action-primary-hover: #183d2e;
+  --aamish-action-primary-soft: #e7f0e8;
+  --aamish-accent-food: #e76e3d;
+  --aamish-status-success: #2f7044;
+  --aamish-status-success-soft: #e7f3e9;
+  --aamish-status-warning: #8b5d13;
+  --aamish-status-warning-soft: #fff2d5;
+  --aamish-status-danger: #a43d35;
+  --aamish-status-danger-soft: #fce9e6;
+  --aamish-status-info: #315e7a;
+  --aamish-status-info-soft: #e8f2f7;
+  --aamish-focus-ring: #267553;
+  --aamish-font-interface: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --aamish-font-display: Georgia, "Times New Roman", serif;
+  --aamish-space-1: 4px;
+  --aamish-space-2: 8px;
+  --aamish-space-3: 12px;
+  --aamish-space-4: 16px;
+  --aamish-space-6: 24px;
+  --aamish-space-8: 32px;
+  --aamish-space-12: 48px;
+  --aamish-space-16: 64px;
+  --aamish-radius-control: 8px;
+  --aamish-radius-card: 12px;
+  --aamish-radius-prominent: 16px;
+  --aamish-shadow-raised: 0 12px 36px rgba(27, 48, 38, 0.1);
+  --aamish-content-form: 720px;
+  --aamish-content-wide: 1240px;
+  --aamish-content-employee: 640px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
