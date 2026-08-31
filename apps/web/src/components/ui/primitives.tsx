@@ -1,0 +1,31 @@
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import { AlertCircle, CheckCircle2, Info, LoaderCircle, TriangleAlert } from "lucide-react";
+import styles from "./ui.module.css";
+
+function classes(...values: Array<string | false | null | undefined>) { return values.filter(Boolean).join(" "); }
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "quiet" | "danger"; size?: "small" | "medium" | "large"; loading?: boolean; loadingLabel?: string };
+export function Button({ variant="primary",size="medium",loading=false,loadingLabel="Working…",disabled,children,className,...props }:ButtonProps){return <button className={classes(styles.button,styles[variant],size!=="medium"&&styles[size],className)} disabled={disabled||loading} aria-busy={loading||undefined} {...props}>{loading&&<span className={styles.spinner} aria-hidden="true"/>}{loading?loadingLabel:children}</button>}
+
+type IconButtonProps=ButtonHTMLAttributes<HTMLButtonElement>&{"aria-label":string};
+export function IconButton({className,children,...props}:IconButtonProps){return <button className={classes(styles.iconButton,className)} {...props}>{children}</button>}
+
+type FieldBase={label:string;name:string;description?:string;error?:string;required?:boolean};
+function FieldFrame({label,name,description,error,required,children}:{children:ReactNode}&FieldBase){const descriptionId=description?`${name}-description`:undefined;const errorId=error?`${name}-error`:undefined;return <label className={styles.field} htmlFor={name}><span className={styles.fieldLabel}>{label}{required&&<span className={styles.required} aria-hidden="true"> *</span>}</span>{description&&<span className={styles.fieldDescription} id={descriptionId}>{description}</span>}{children}{error&&<span className={styles.fieldError} id={errorId}>{error}</span>}</label>}
+export function TextField({label,description,error,required,className,...props}:FieldBase&InputHTMLAttributes<HTMLInputElement>){const describedBy=[description&&`${props.name}-description`,error&&`${props.name}-error`].filter(Boolean).join(" ")||undefined;return <FieldFrame label={label} name={props.name} description={description} error={error} required={required}><input id={props.name} className={classes(styles.fieldControl,className)} required={required} aria-invalid={Boolean(error)||undefined} aria-describedby={describedBy} {...props}/></FieldFrame>}
+export function SelectField({label,description,error,required,className,children,...props}:FieldBase&SelectHTMLAttributes<HTMLSelectElement>){const describedBy=[description&&`${props.name}-description`,error&&`${props.name}-error`].filter(Boolean).join(" ")||undefined;return <FieldFrame label={label} name={props.name} description={description} error={error} required={required}><select id={props.name} className={classes(styles.fieldControl,className)} required={required} aria-invalid={Boolean(error)||undefined} aria-describedby={describedBy} {...props}>{children}</select></FieldFrame>}
+export function TextAreaField({label,description,error,required,className,...props}:FieldBase&TextareaHTMLAttributes<HTMLTextAreaElement>){const describedBy=[description&&`${props.name}-description`,error&&`${props.name}-error`].filter(Boolean).join(" ")||undefined;return <FieldFrame label={label} name={props.name} description={description} error={error} required={required}><textarea id={props.name} className={classes(styles.fieldControl,className)} required={required} aria-invalid={Boolean(error)||undefined} aria-describedby={describedBy} {...props}/></FieldFrame>}
+
+export function Card({children,padded=true,className}:{children:ReactNode;padded?:boolean;className?:string}){return <section className={classes(styles.card,padded&&styles.cardPadding,className)}>{children}</section>}
+export function StatusBadge({tone="neutral",children}:{tone?:"neutral"|"success"|"warning"|"dangerTone"|"info";children:ReactNode}){return <span className={classes(styles.badge,styles[tone])}>{children}</span>}
+
+const alertIcons={info:Info,success:CheckCircle2,warning:TriangleAlert,danger:AlertCircle};
+export function Alert({tone="info",title,children}:{tone?:keyof typeof alertIcons;title:string;children?:ReactNode}){const Icon=alertIcons[tone];return <div className={classes(styles.alert,styles[`alert${tone[0].toUpperCase()}${tone.slice(1)}` as keyof typeof styles])} role={tone==="danger"?"alert":"status"}><Icon size={18} aria-hidden="true"/><div><strong>{title}</strong>{children&&<span>{children}</span>}</div></div>}
+
+export function EmptyState({icon,title,description,action}:{icon?:ReactNode;title:string;description:string;action?:ReactNode}){return <section className={styles.state}><div className={styles.stateInner}>{icon&&<div className={styles.stateIcon}>{icon}</div>}<h2>{title}</h2><p>{description}</p>{action&&<div className={styles.stateAction}>{action}</div>}</div></section>}
+export function LoadingState({label="Loading…"}:{label?:string}){return <section className={styles.state} aria-live="polite" aria-busy="true"><div className={styles.stateInner}><div className={styles.stateIcon}><LoaderCircle className={styles.spinner} aria-hidden="true"/></div><h2>{label}</h2></div></section>}
+export function ErrorState({title="Something went wrong",description,requestId,action}:{title?:string;description:string;requestId?:string;action?:ReactNode}){return <section className={styles.state} role="alert"><div className={styles.stateInner}><div className={styles.stateIcon}><AlertCircle aria-hidden="true"/></div><h2>{title}</h2><p>{description}{requestId&&<> Request ID: <code>{requestId}</code>.</>}</p>{action&&<div className={styles.stateAction}>{action}</div>}</div></section>}
+
+export function PageHeader({eyebrow,title,description,actions}:{eyebrow?:string;title:string;description?:string;actions?:ReactNode}){return <header className={styles.pageHeader}><div>{eyebrow&&<p className={styles.pageEyebrow}>{eyebrow}</p>}<h1>{title}</h1>{description&&<p className={styles.pageHeaderDescription}>{description}</p>}</div>{actions&&<div className={styles.pageActions}>{actions}</div>}</header>}
+
+export { styles as uiStyles };
