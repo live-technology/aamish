@@ -112,6 +112,7 @@ This beta may be deployed only as a protected internal testing environment.
 - [Data model](docs/data-models.md)
 - [API specification](docs/api-specification.md)
 - [Development notes](docs/development.md)
+- [Beta feedback analysis and work plan](docs/feedback-analysis-and-workplan-2026-09-01.md)
 - [Contribution and PR rules](AGENTS.md)
 
 ## Production readiness
