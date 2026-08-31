@@ -37,6 +37,24 @@ Rules:
 6. Merge `dev` into `main` only through a separate release pull request after the integrated build and internal journey checks pass.
 7. Do not open feature branches directly against `main` and do not merge `main` changes without bringing them back into `dev`.
 
+## Branch ownership and merge authority
+
+The expected ownership split is:
+
+- Automated contributors own task branches and may merge a reviewed task PR into `dev` only after every required check passes and the GitHub identity performing the merge has explicit PR write permission.
+- The human repository owner owns releases and manually merges the release PR from `dev` into `main`.
+- Automated contributors must never merge into `main`, trigger a production release from another branch, or bypass the release owner.
+- Nobody may work around missing PR permissions by pushing a task branch directly to `dev` or `main`.
+
+When GitHub permissions prevent an automated contributor from opening or merging a PR, the contributor must push only the task branch, provide the compare/PR URL, report the missing permission, and stop before changing a permanent branch. The required GitHub App permissions are repository access plus **Contents: read and write** and **Pull requests: read and write**.
+
+Recommended branch protection:
+
+- `dev`: require a pull request, require repository checks, block force pushes and direct pushes, and permit the approved automated contributor identity to merge reviewed PRs.
+- `main`: require a pull request and repository checks, block force pushes and direct pushes, and reserve release approval and merge authority for the human repository owner.
+
+Use **Create a merge commit** for the `dev` to `main` release PR. That merge commit makes `main` appear one commit ahead of `dev`, which is expected. Immediately after the release, an automated contributor must open a no-feature sync PR from `main` back into `dev` under the same release task. Merge that sync PR before creating another task branch so both permanent branches share the release commit and the network graph remains understandable.
+
 ## Task requirement
 
 Every pull request must represent exactly one tracked task. The PR must include the task ID and a link to the issue, ticket, or written task description. If no task exists, create one before opening the PR.
@@ -83,11 +101,24 @@ Recommended PR title format:
 
 A PR is not ready to merge when it has unrelated changes, missing task context, failing checks, undocumented migrations, visible layout regressions, or unresolved review comments.
 
+An automated contributor may merge a PR into `dev` only when:
+
+- the branch started from the current `dev`;
+- the PR contains exactly one tracked task;
+- all required automated and manual validation is documented and passing;
+- visible changes include responsive evidence;
+- migrations and environment changes are explicit;
+- review comments are resolved; and
+- the contributor has verified the PR targets `dev`, never `main`.
+
+Delete the task branch after a successful merge. Do not delete `dev` or `main`.
+
 ## Required checks
 
 At minimum, run from `apps/web`:
 
 ```bash
+bun test
 bun run lint
 bun run build
 ```
@@ -108,3 +139,12 @@ Review in this order:
 6. maintainability and scope discipline.
 
 Because this is a beta, limitations may be accepted for internal testing only when they are explicit in the PR and captured as follow-up tasks.
+
+## Repository hygiene and instruction maintenance
+
+- Keep the root `AGENTS.md` authoritative for repository-wide workflow, safety, and release rules.
+- Put framework- or directory-specific additions in the nearest nested `AGENTS.md`; nested rules may add constraints but may not weaken root rules.
+- Update `AGENTS.md` in a dedicated documentation task whenever branch ownership, required checks, release authority, or contributor permissions change.
+- Update `README.md` for operator-facing commands and setup. Keep implementation details and acceptance evidence in the tracked task or PR instead of expanding `AGENTS.md` into a changelog.
+- Never commit `.vercel/`, `.env*`, local recordings, generated logs, database exports, or temporary debugging artifacts.
+- Before committing, inspect `git status`, stage explicit paths, and confirm unrelated user changes remain untouched.
