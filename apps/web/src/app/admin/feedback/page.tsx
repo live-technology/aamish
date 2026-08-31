@@ -10,6 +10,8 @@ export default async function FeedbackPage() {
   const feedback = await db()<FeedbackRow[]>`
     SELECT pf.id, pf.category, pf.message, pf.audio_url, pf.audio_duration_seconds,
       pf.page_path, pf.status, pf.submitter_role, pf.created_at::text,
+      pf.transcript, pf.transcript_english, pf.transcription_summary,
+      pf.transcription_confidence, pf.transcription_model, pf.transcribed_at::text,
       COALESCE(au.full_name, 'Deleted user') AS submitter_name,
       COALESCE(au.username, 'unknown') AS username,
       e.name AS enterprise_name
