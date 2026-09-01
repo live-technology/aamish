@@ -14,7 +14,7 @@ export const superAdminNavigation: ShellNavigationItem[] = [
   { href: "/admin/organizations", label: "Organizations", icon: Building2 },
   { href: "/admin/menus", label: "Menus", icon: PackageOpen },
   { href: "/admin/calendar", label: "Service calendar", icon: CalendarDays },
-  { href: "/admin/operations", label: "Fulfillment", icon: ChartNoAxesColumn },
+  { href: "/admin/fulfillment", label: "Fulfillment", icon: ChartNoAxesColumn },
   { href: "/admin/quality", label: "Quality", icon: ShieldCheck },
   { href: "/admin/feedback", label: "Product feedback", icon: MessageSquareText },
 ];
