@@ -30,8 +30,10 @@ The page may be empty after local cleanup. If it is empty, validate the empty-st
 
 ## Report
 
+Follow every applicable measurement and screenshot rule in `docs/testing/antigravity-visual-qa.md`. In particular, confirm long menu/location names wrap, both option rows remain visible after scrolling above fixed navigation, and cutoff badges do not collide with dates.
+
 Return the JSON format from `docs/testing/antigravity-personas.md` and save the independent result to:
 
-`docs/evidence/AAM-023/antigravity-report.json`
+`docs/evidence/AAM-023/antigravity/report.json`
 
 Do not edit any other repository file.
