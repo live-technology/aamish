@@ -11,6 +11,8 @@ describe("LoginForm accessibility contract", () => {
     expect(html).toContain("Sign in to Aamish");
     expect(html).toContain('autoComplete="username"');
     expect(html).toContain('autoComplete="current-password"');
+    expect(html).toContain('method="post"');
+    expect(html).not.toContain('method="get"');
     expect(html.match(/required=""/g)?.length).toBe(2);
     expect(html).toContain("correct workspace automatically");
   });

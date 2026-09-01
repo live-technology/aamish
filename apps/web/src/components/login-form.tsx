@@ -123,6 +123,7 @@ export function LoginForm({ sessionEnded = false }: LoginFormProps) {
 
           <form
             className={styles.form}
+            method="post"
             onSubmit={submit}
             aria-busy={loading}
           >
