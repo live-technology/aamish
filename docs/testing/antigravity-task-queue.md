@@ -15,7 +15,8 @@ This queue makes exploratory QA asynchronous and prevents the primary coding loo
 
 | Task | Persona | Assignment | Expected report | Status |
 | --- | --- | --- | --- | --- |
-| AAM-023 | `aamish-super-admin-tester` | `.agents/tasks/AAM-023-fulfillment-qa.md` | `docs/evidence/AAM-023/antigravity-report.json` | Interactive run pending |
+| AAM-023 | `aamish-super-admin-tester` | `.agents/tasks/AAM-023-fulfillment-qa.md` | `docs/evidence/AAM-023/antigravity/report.json` | Ready for user-run session |
+| AAM-024 | `aamish-super-admin-tester` | `.agents/tasks/AAM-024-quality-feedback-qa.md` | `docs/evidence/AAM-024/antigravity/report.json` | Ready for user-run session |
 
 ## Token discipline
 
