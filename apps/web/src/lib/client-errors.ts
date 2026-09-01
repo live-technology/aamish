@@ -22,6 +22,7 @@ const messages: Record<string, string> = {
   PAST_MEAL_DATE: "Choose today or a future meal date.",
   REVIEW_NOT_AVAILABLE: "This meal is not available for review. Reviews require an opted-in meal from the last seven days.",
   SCHEDULE_ALREADY_EXISTS: "This enterprise already has a lunch menu for that date.",
+  SCHEDULE_LIST_FAILED: "The service calendar could not be loaded. Try again or share the request ID with support.",
   SCHEDULE_PUBLISH_FAILED: "The menu could not be published. It may already exist for that date.",
   UPLOAD_FAILED: "The image upload failed. Try a smaller image or try again.",
 };
