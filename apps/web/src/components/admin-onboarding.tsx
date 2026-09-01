@@ -1,10 +1,12 @@
 "use client";
 
-import { Building2, Check, ChevronLeft, ChevronRight, Copy, MapPin, Plus, Trash2, X } from "lucide-react";
+import { Building2, Check, ChevronLeft, ChevronRight, Copy, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { AppShell } from "@/components/ui/app-shell";
+import { EnterpriseEditor } from "@/components/enterprise-editor";
 import { Alert, Button, EmptyState, IconButton, PageHeader, StatusBadge, TextField } from "@/components/ui/primitives";
 import { clientErrorMessage } from "@/lib/client-errors";
+import type { EditableEnterprise } from "@/lib/enterprise-edit";
 import {
   emptyEnterpriseDraft,
   enterpriseSteps,
@@ -16,16 +18,7 @@ import { superAdminNavigation } from "@/lib/super-admin-navigation";
 import { useModalDialog } from "@/lib/use-modal-dialog";
 import styles from "./admin-experience.module.css";
 
-export type Enterprise = {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  poc_name: string;
-  poc_email: string;
-  location_count: number;
-  admin_count: number;
-};
+export type Enterprise = EditableEnterprise;
 
 type RequestFailure = { message: string; requestId?: string };
 type CreatedEnterprise = { enterpriseId: string; enterpriseAdminUsername: string };
@@ -41,6 +34,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usernameEdited, setUsernameEdited] = useState(false);
+  const [editing, setEditing] = useState<EditableEnterprise | null>(null);
   const currentStep = enterpriseSteps[stepIndex];
 
   const dialogRef = useModalDialog<HTMLElement>(open, closeDialog, saving);
@@ -159,13 +153,13 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
 
     {enterprises.length === 0 ? <EmptyState icon={<Building2 size={25} aria-hidden="true" />} title="No enterprises yet" description="Create the first enterprise with at least one delivery location and an administrator login." action={<Button onClick={openDialog}><Plus size={17} aria-hidden="true" />Add first enterprise</Button>} /> : <>
       <section className={styles.organizationSummary} aria-label="Organization totals">
-        <Summary value={enterprises.length} label="Active enterprises" />
+        <Summary value={enterprises.filter((item) => item.status === "ACTIVE").length} label="Active enterprises" />
         <Summary value={enterprises.reduce((total, item) => total + item.location_count, 0)} label="Delivery locations" />
         <Summary value={enterprises.reduce((total, item) => total + item.admin_count, 0)} label="Enterprise administrators" />
       </section>
       <section className={styles.organizationTable} aria-label="Organizations">
-        <div className={styles.organizationHead}><span>Organization</span><span>Primary contact</span><span>Locations</span><span>Administrators</span><span>Status</span></div>
-        {enterprises.map((enterprise) => <article className={styles.organizationRow} key={enterprise.id}><div><strong>{enterprise.name}</strong><small>/{enterprise.slug}</small></div><div><strong>{enterprise.poc_name}</strong><small>{enterprise.poc_email}</small></div><span>{enterprise.location_count}</span><span>{enterprise.admin_count}</span><StatusBadge tone={enterprise.status === "ACTIVE" ? "success" : "neutral"}>{enterprise.status}</StatusBadge></article>)}
+        <div className={styles.organizationHead}><span>Organization</span><span>Primary contact</span><span>Locations</span><span>Administrators</span><span>Status / action</span></div>
+        {enterprises.map((enterprise) => <article className={styles.organizationRow} key={enterprise.id}><div><strong>{enterprise.name}</strong><small>/{enterprise.slug}</small></div><div><strong>{enterprise.poc_name}</strong><small>{enterprise.poc_email}</small></div><span>{enterprise.location_count}</span><span>{enterprise.admin_count}</span><div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}><StatusBadge tone={enterprise.status === "ACTIVE" ? "success" : "neutral"}>{enterprise.status}</StatusBadge><IconButton aria-label={`Edit ${enterprise.name}`} onClick={() => setEditing(enterprise)}><Pencil size={15}/></IconButton></div></article>)}
       </section>
     </>}
 
@@ -178,6 +172,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
         <footer className={styles.dialogFooter}><Button type="button" variant="secondary" onClick={stepIndex === 0 ? closeDialog : () => { setFailure(null); setStepIndex((current) => current - 1); }} disabled={saving}>{stepIndex === 0 ? "Cancel" : <><ChevronLeft size={16} />Back</>}</Button><Button type="submit" loading={saving} loadingLabel="Creating enterprise…">{currentStep.id === "review" ? "Create enterprise" : <>Continue<ChevronRight size={16} /></>}</Button></footer>
       </form>}
     </section></div>}
+    {editing && <EnterpriseEditor key={editing.id} enterprise={editing} onClose={() => setEditing(null)} onSaved={loadEnterprises} />}
     {loading && <span className="sr-only" role="status">Refreshing organizations…</span>}
   </AppShell>;
 }
