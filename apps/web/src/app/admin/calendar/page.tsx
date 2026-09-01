@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { MenuCalendar } from "@/components/menu-calendar";
 import { currentSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
 import type { MenuPackage } from "@/components/package-manager";
 
 export default async function CalendarPage() {
   const session = await currentSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "SUPER_ADMIN") redirect("/");
   const enterprises = await db()< { id: string; name: string }[]>`SELECT id, name FROM enterprises WHERE status = 'ACTIVE' ORDER BY name`;
   const menus = await db()<MenuPackage[]>`SELECT id, title, description, category, price::float, status, image_mobile_url FROM menus WHERE status = 'ACTIVE' ORDER BY title`;

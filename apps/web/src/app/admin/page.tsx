@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import { AdminOnboarding } from "@/components/admin-onboarding";
 import { currentSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
 import type { Enterprise } from "@/components/admin-onboarding";
 
 export default async function AdminPage() {
   const session = await currentSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "SUPER_ADMIN") redirect(session.role === "ENTERPRISE_ADMIN" ? "/enterprise" : "/employee");
   const enterprises = await db()<Enterprise[]>`
     SELECT e.id, e.name, e.slug, e.status, e.poc_name, e.poc_email,
