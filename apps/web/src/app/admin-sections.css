@@ -71,11 +71,16 @@
 .feedback-inbox-body code { min-width: 0; overflow: hidden; color: #78847c; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .feedback-inbox-body>footer select { margin-left: auto; min-width: 105px; padding: 5px 7px; }
 
+@media (max-width: 959px) {
+  .feedback-capture { bottom: 84px; }
+  .feedback-panel { max-height: calc(100vh - 98px); overflow: auto; }
+}
+
 @media (max-width: 800px) {
-  .feedback-capture { right: 14px; bottom: 14px; }
+  .feedback-capture { right: 14px; bottom: 84px; }
   .feedback-trigger { width: 48px; height: 48px; justify-content: center; padding: 0; }
   .feedback-trigger span { display: none; }
-  .feedback-panel { width: calc(100vw - 28px); max-height: calc(100vh - 28px); overflow: auto; }
+  .feedback-panel { width: calc(100vw - 28px); max-height: calc(100vh - 98px); overflow: auto; }
   .feedback-inbox-card { grid-template-columns: 1fr; }
   .feedback-kind { flex-direction: row; justify-content: flex-start; padding: 10px 15px; }
   .feedback-inbox-body { padding: 15px; }
