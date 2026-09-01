@@ -5,5 +5,5 @@ export const enterpriseNavigation: ShellNavigationItem[] = [
   { href: "/enterprise", label: "Overview", icon: LayoutDashboard },
   { href: "/enterprise/meals", label: "Meals", icon: CalendarDays },
   { href: "/enterprise/people", label: "People", icon: Users },
-  { href: "/enterprise/manage", label: "Reviews", icon: Star },
+  { href: "/enterprise/reviews", label: "Reviews", icon: Star },
 ];
