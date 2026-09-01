@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 import { currentSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
 import { EmployeePortal, type EmployeeSchedule } from "@/components/employee-portal";
 
-export default async function EmployeePage(){const session=await currentSession();if(!session)redirect("/login");if(session.role!=="EMPLOYEE"||!session.employeeId||!session.enterpriseId)redirect("/");const profile=(await db()< {enterprise_name:string}[]>`SELECT e.name AS enterprise_name FROM enterprises e WHERE e.id=${session.enterpriseId}`)[0];const schedules=await db()<EmployeeSchedule[]>`
+export default async function EmployeePage(){const session=await currentSession();if(!session)redirect(SESSION_ENDED_LOGIN_PATH);if(session.role!=="EMPLOYEE"||!session.employeeId||!session.enterpriseId)redirect("/");const profile=(await db()< {enterprise_name:string}[]>`SELECT e.name AS enterprise_name FROM enterprises e WHERE e.id=${session.enterpriseId}`)[0];const schedules=await db()<EmployeeSchedule[]>`
 SELECT ms.id,ms.schedule_date::text,ms.cutoff_time::text,ms.status,COALESCE(mp.is_opted_in,TRUE) AS is_opted_in,mp.selected_option_id,dl.name AS location_name,
 (mp.id IS NOT NULL AND mp.is_opted_in=TRUE AND ms.schedule_date BETWEEN CURRENT_DATE-7 AND CURRENT_DATE) AS can_review,
 COALESCE(json_agg(json_build_object('id',mso.id,'label',mso.option_label,'title',m.title,'description',m.description,'image_url',m.image_mobile_url) ORDER BY mso.option_label) FILTER(WHERE mso.id IS NOT NULL),'[]') AS options

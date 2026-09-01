@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { log, logError } from "@/lib/logger";
 import { setSession, signIn } from "@/lib/auth";
-
-const destination = { SUPER_ADMIN: "/admin", ENTERPRISE_ADMIN: "/enterprise", EMPLOYEE: "/employee" } as const;
+import { destinationForRole } from "@/lib/auth-navigation";
 
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
     await setSession(session);
     log("auth.login_succeeded", { requestId, userId: session.userId, role: session.role });
-    return NextResponse.json({ redirectTo: destination[session.role], requestId });
+    return NextResponse.json({ redirectTo: destinationForRole(session.role), requestId });
   } catch (error) {
     logError("auth.login_error", error, { requestId });
     return NextResponse.json({ error: "LOGIN_FAILED", requestId }, { status: 500 });

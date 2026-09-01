@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import type { AppRole } from "@/lib/auth-navigation";
 
 const SESSION_COOKIE = "aamish_session";
 const secret = process.env.SESSION_SECRET ?? "local-development-secret-change-before-deploy";
@@ -9,7 +10,7 @@ export type Session = {
   userId: string;
   username: string;
   fullName: string;
-  role: "SUPER_ADMIN" | "ENTERPRISE_ADMIN" | "EMPLOYEE";
+  role: AppRole;
   enterpriseId: string | null;
   employeeId: string | null;
 };

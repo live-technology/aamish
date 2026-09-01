@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { FeedbackInbox, type FeedbackRow } from "@/components/feedback-inbox";
 import { currentSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
 
 export default async function FeedbackPage() {
   const session = await currentSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "SUPER_ADMIN") redirect("/");
   const feedback = await db()<FeedbackRow[]>`
     SELECT pf.id, pf.category, pf.message, pf.audio_url, pf.audio_duration_seconds,

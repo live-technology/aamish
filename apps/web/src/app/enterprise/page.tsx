@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { currentSession } from "@/lib/auth";
+import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
 import { EnterprisePortal, type Employee, type EnterpriseOrder, type EnterpriseReview } from "@/components/enterprise-portal";
 
 export default async function EnterprisePage() {
   const session = await currentSession();
-  if (!session) redirect("/login");
+  if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "ENTERPRISE_ADMIN" || !session.enterpriseId) redirect("/");
   const enterpriseId = session.enterpriseId;
   const [enterpriseRows, locations, employees, orders, reviews] = await Promise.all([
