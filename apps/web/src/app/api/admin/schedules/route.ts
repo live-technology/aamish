@@ -7,17 +7,19 @@ export async function GET() {
   const requestId = crypto.randomUUID();
   const session = await currentSession();
   if (session?.role !== "SUPER_ADMIN") return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
-  const schedules = await db()`
-    SELECT ms.id, ms.schedule_date::text, ms.cutoff_time::text, ms.status, e.name AS enterprise_name,
-      COALESCE(json_agg(json_build_object('label', mso.option_label, 'title', m.title) ORDER BY mso.option_label) FILTER (WHERE mso.id IS NOT NULL), '[]') AS options
-    FROM menu_schedules ms
-    JOIN enterprises e ON e.id = ms.enterprise_id
-    LEFT JOIN menu_schedule_options mso ON mso.schedule_id = ms.id
-    LEFT JOIN menus m ON m.id = mso.menu_id
-    GROUP BY ms.id, e.name
-    ORDER BY ms.schedule_date DESC
-  `;
-  return NextResponse.json({ schedules, requestId });
+  try {
+    const schedules = await db()`
+      SELECT ms.id, ms.schedule_date::text, ms.cutoff_time::text, ms.status, e.name AS enterprise_name,
+        COALESCE(json_agg(json_build_object('label', mso.option_label, 'title', m.title) ORDER BY mso.option_label) FILTER (WHERE mso.id IS NOT NULL), '[]') AS options
+      FROM menu_schedules ms JOIN enterprises e ON e.id = ms.enterprise_id
+      LEFT JOIN menu_schedule_options mso ON mso.schedule_id = ms.id LEFT JOIN menus m ON m.id = mso.menu_id
+      GROUP BY ms.id, e.name ORDER BY ms.schedule_date DESC
+    `;
+    return NextResponse.json({ schedules, requestId });
+  } catch (error) {
+    logError("schedule.list_failed", error, { requestId, actorUserId: session.userId });
+    return NextResponse.json({ error: "SCHEDULE_LIST_FAILED", requestId }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
