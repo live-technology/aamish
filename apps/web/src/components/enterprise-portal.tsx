@@ -12,10 +12,10 @@ export type Employee = { id: string; employee_code: string; full_name: string; e
 export type EnterpriseOrder = { schedule_id: string; schedule_date: string; cutoff_time: string; status: string; location_name: string; option_label: string; menu_title: string; order_count: number };
 export type EnterpriseReview = { id: string; rating: number; comment: string | null; created_at: string; schedule_date: string; full_name: string; location_name: string; menu_title: string };
 
-export function EnterprisePortal({ enterpriseName, fullName, locations, initialEmployees, orders, reviews }: { enterpriseName: string; fullName: string; locations: Location[]; initialEmployees: Employee[]; orders: EnterpriseOrder[]; reviews: EnterpriseReview[] }) {
+export function EnterprisePortal({ enterpriseName, fullName, locations, initialEmployees, orders, reviews, initialView = "employees" }: { enterpriseName: string; fullName: string; locations: Location[]; initialEmployees: Employee[]; orders: EnterpriseOrder[]; reviews: EnterpriseReview[]; initialView?: "orders" | "reviews" | "employees" }) {
   const router = useRouter();
   const [employees, setEmployees] = useState(initialEmployees);
-  const [view, setView] = useState<"orders" | "reviews" | "employees">("orders");
+  const [view, setView] = useState<"orders" | "reviews" | "employees">(initialView);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
