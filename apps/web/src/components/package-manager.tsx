@@ -8,6 +8,7 @@ import { AppShell } from "@/components/ui/app-shell";
 import { Alert, Button, EmptyState, IconButton, PageHeader, SelectField, StatusBadge, TextAreaField, TextField } from "@/components/ui/primitives";
 import { clientErrorMessage, validateImage } from "@/lib/client-errors";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
+import { useModalDialog } from "@/lib/use-modal-dialog";
 import styles from "./menu-library.module.css";
 
 export type MenuPackage = {
@@ -67,12 +68,7 @@ export function PackageManager({ fullName, initialMenus }: { fullName: string; i
   }), [menus, query, statusFilter]);
 
   useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && stage === "idle") closeForm(); };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  });
+  const dialogRef = useModalDialog<HTMLElement>(open, closeForm, stage !== "idle");
 
   function resetPreview() {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -169,7 +165,7 @@ export function PackageManager({ fullName, initialMenus }: { fullName: string; i
       {visibleMenus.length === 0 ? <EmptyState title="No menus match" description="Change the search or status filter to see other menus." /> : <section className={styles.grid} aria-label="Menu packages">{visibleMenus.map((menu) => <MenuCard menu={menu} edit={() => openEdit(menu)} key={menu.id} />)}</section>}
     </>}
 
-    {open && <div className={styles.backdrop}><section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="menu-dialog-title">
+    {open && <div className={styles.backdrop}><section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="menu-dialog-title" tabIndex={-1}>
       <header><div><p>{editing ? "Edit menu" : "New menu"}</p><h2 id="menu-dialog-title">{editing ? "Update menu package" : "Create menu package"}</h2><span>Required fields are marked with <b>*</b>.</span></div><IconButton type="button" aria-label="Close menu form" onClick={closeForm} disabled={stage !== "idle"}><X size={19} /></IconButton></header>
       <form onSubmit={submit}><div className={styles.formBody}><div className={styles.formGrid}><TextField autoFocus label="Menu title" name="title" value={draft.title} onChange={(event) => update("title", event.target.value)} placeholder="e.g. Homestyle lunch" required /><SelectField label="Category" name="category" value={draft.category} onChange={(event) => update("category", event.target.value)} required><option value="REGULAR_LUNCH">Regular lunch</option><option value="PREMIUM">Premium</option><option value="VEGETARIAN">Vegetarian</option></SelectField><TextAreaField className={styles.wide} label="Description" name="description" value={draft.description} onChange={(event) => update("description", event.target.value)} placeholder="What is included in this menu?" rows={5} required /><TextField label="Price (BDT)" name="price" type="number" inputMode="decimal" min="0" step="0.01" value={draft.price} onChange={(event) => update("price", event.target.value)} placeholder="0.00" required /><SelectField label="Status" name="status" value={draft.status} onChange={(event) => update("status", event.target.value)} description="Only active menus can be scheduled." required><option value="DRAFT">Draft</option><option value="ACTIVE">Active</option></SelectField></div><MenuImageField editing={editing} previewUrl={previewUrl} imageFile={imageFile} chooseImage={chooseImage} />{failure && <Alert tone="danger" title={editing ? "Menu was not updated" : "Menu was not created"}>{failure.message}{failure.requestId && <code>Request ID: {failure.requestId}</code>}</Alert>}</div><footer><Button type="button" variant="secondary" onClick={closeForm} disabled={stage !== "idle"}>Cancel</Button><Button type="submit" loading={stage !== "idle"} loadingLabel={stage === "uploading" ? "Uploading image…" : "Saving menu…"}>{editing ? "Save changes" : "Create menu"}</Button></footer></form>
     </section></div>}
