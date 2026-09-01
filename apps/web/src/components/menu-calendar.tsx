@@ -8,6 +8,7 @@ import { Alert, Button, EmptyState, IconButton, PageHeader, SelectField, StatusB
 import type { MenuPackage } from "@/components/package-manager";
 import { clientErrorMessage } from "@/lib/client-errors";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
+import { useModalDialog } from "@/lib/use-modal-dialog";
 import styles from "./service-calendar.module.css";
 
 export type EnterpriseChoice = { id: string; name: string; active_employee_count: number };
@@ -40,6 +41,7 @@ export function MenuCalendar({ fullName, enterprises, menus, initialSchedules }:
   const upcoming = useMemo(() => schedules.filter((schedule) => schedule.schedule_date >= today), [schedules, today]);
   const past = useMemo(() => schedules.filter((schedule) => schedule.schedule_date < today), [schedules, today]);
   const visibleSchedules = scope === "UPCOMING" ? upcoming : past;
+  const dialogRef = useModalDialog<HTMLElement>(open, close, saving);
 
   function startPublish() { setDraft(emptyDraft()); setStep(1); setFailure(null); setNotice(""); setOpen(true); }
   function close() { if (!saving) setOpen(false); }
@@ -84,7 +86,7 @@ export function MenuCalendar({ fullName, enterprises, menus, initialSchedules }:
       {visibleSchedules.length === 0 ? <EmptyState title={scope === "UPCOMING" ? "No upcoming service" : "No past service"} description={scope === "UPCOMING" ? "Schedule the next service when its menus and organization are ready." : "Completed meal services will appear here."} /> : <section className={styles.timeline} aria-label={`${scope.toLowerCase()} services`}>{visibleSchedules.map((schedule) => <ScheduleCard schedule={schedule} today={today} key={schedule.id} />)}</section>}
     </>}
 
-    {open && <div className={styles.backdrop}><section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="schedule-dialog-title">
+    {open && <div className={styles.backdrop}><section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="schedule-dialog-title" tabIndex={-1}>
       <header><div><p>Schedule service · Step {step} of 3</p><h2 id="schedule-dialog-title">{step === 1 ? "When and where?" : step === 2 ? "Choose employee options" : "Review before publishing"}</h2><span>{step < 3 ? <>Required fields are marked with <b>*</b>.</> : "Publishing creates default meal reservations for active employees."}</span></div><IconButton type="button" aria-label="Close schedule form" onClick={close} disabled={saving}><X size={19} /></IconButton></header>
       <ol className={styles.steps} aria-label="Publish progress"><li className={step >= 1 ? styles.currentStep : ""}>1 <span>Service</span></li><li className={step >= 2 ? styles.currentStep : ""}>2 <span>Options</span></li><li className={step >= 3 ? styles.currentStep : ""}>3 <span>Review</span></li></ol>
       <form onSubmit={submit}><div className={styles.formBody}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Building2, Check, ChevronLeft, ChevronRight, Copy, MapPin, Plus, Trash2, X } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Alert, Button, EmptyState, IconButton, PageHeader, StatusBadge, TextField } from "@/components/ui/primitives";
 import { clientErrorMessage } from "@/lib/client-errors";
@@ -13,6 +13,7 @@ import {
   validateEnterpriseStep,
 } from "@/lib/enterprise-onboarding";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
+import { useModalDialog } from "@/lib/use-modal-dialog";
 import styles from "./admin-experience.module.css";
 
 export type Enterprise = {
@@ -42,12 +43,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
   const [usernameEdited, setUsernameEdited] = useState(false);
   const currentStep = enterpriseSteps[stepIndex];
 
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape" && !saving) closeDialog(); };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  });
+  const dialogRef = useModalDialog<HTMLElement>(open, closeDialog, saving);
 
   function openDialog() {
     setOpen(true);
@@ -173,7 +169,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
       </section>
     </>}
 
-    {open && <div className={styles.dialogBackdrop} style={{ zIndex: 80 }}><section className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="enterprise-dialog-title">
+    {open && <div className={styles.dialogBackdrop} style={{ zIndex: 80 }}><section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="enterprise-dialog-title" tabIndex={-1}>
       <header className={styles.dialogHeader}><div><p>New enterprise</p><h2 id="enterprise-dialog-title">Set up an enterprise</h2><span>Required fields are marked with <b>*</b>.</span></div><IconButton type="button" aria-label="Close enterprise setup" onClick={closeDialog} disabled={saving}><X size={19} /></IconButton></header>
 
       {created ? <SuccessHandoff created={created} copyUsername={copyUsername} close={closeDialog} /> : <form className={styles.dialogForm} onSubmit={submit}>
