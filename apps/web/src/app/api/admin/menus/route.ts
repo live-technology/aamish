@@ -8,8 +8,13 @@ export async function GET() {
   const requestId = crypto.randomUUID();
   const session = await currentSession();
   if (session?.role !== "SUPER_ADMIN") return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
-  const menus = await db()`SELECT id, title, description, category, price::float, status, image_mobile_url FROM menus ORDER BY created_at DESC`;
-  return NextResponse.json({ menus, requestId });
+  try {
+    const menus = await db()`SELECT id, title, description, category, price::float, status, image_mobile_url FROM menus ORDER BY created_at DESC`;
+    return NextResponse.json({ menus, requestId });
+  } catch (error) {
+    logError("menu.list_failed", error, { requestId, actorUserId: session.userId });
+    return NextResponse.json({ error: "MENU_LIST_FAILED", requestId }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -20,7 +25,7 @@ export async function POST(request: NextRequest) {
     const validated = validateMenuPackage(await request.json(), true);
     if (!validated.ok) return NextResponse.json({ error: validated.error, requestId }, { status: 400 });
     const body = validated.value;
-    const rows = await db()`INSERT INTO menus (title, description, category, price, image_desktop_url, image_mobile_url, status) VALUES (${body.title}, ${body.description}, ${body.category}, ${body.price}, ${body.imageUrl}, ${body.imageUrl}, ${body.status}) RETURNING id, title, status`;
+    const rows = await db()`INSERT INTO menus (title, description, category, price, image_desktop_url, image_mobile_url, status) VALUES (${body.title}, ${body.description}, ${body.category}, ${body.price}, ${body.imageUrl}, ${body.imageUrl}, ${body.status}) RETURNING id, title, description, category, price::float, status, image_mobile_url`;
     log("menu.created", { requestId, actorUserId: session.userId, menuId: rows[0].id, status: rows[0].status });
     return NextResponse.json({ menu: rows[0], requestId }, { status: 201 });
   } catch (error) {

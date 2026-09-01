@@ -13,6 +13,7 @@ const messages: Record<string, string> = {
   INVALID_LOCATION: "Choose a valid delivery location.",
   INVALID_MENU_OPTION: "Choose a valid meal option.",
   INVALID_REVIEW: "Choose a rating and check the review details.",
+  MENU_LIST_FAILED: "The menu library could not be loaded. Try again or share the request ID with support.",
   MISSING_REQUIRED_FIELDS: "Complete all required fields.",
   PACKAGE_CREATION_FAILED: "The package could not be created. Check the details and try again.",
   PACKAGE_NOT_FOUND: "That package no longer exists.",

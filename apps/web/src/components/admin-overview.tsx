@@ -27,7 +27,7 @@ export function AdminOverview({ fullName, metrics, recentEnterprises }: { fullNa
   const hasEnterprise = metrics.enterprise_count > 0;
   const readiness = [
     { icon: Building2, title: "Organizations", value: `${metrics.enterprise_count} active`, detail: `${metrics.location_count} delivery locations configured`, href: "/admin/organizations", ready: hasEnterprise },
-    { icon: PackageCheck, title: "Menu library", value: `${metrics.active_menu_count} active`, detail: metrics.active_menu_count ? "Ready to schedule" : "Create an active package next", href: "/admin/packages", ready: metrics.active_menu_count > 0 },
+    { icon: PackageCheck, title: "Menu library", value: `${metrics.active_menu_count} active`, detail: metrics.active_menu_count ? "Ready to schedule" : "Create an active package next", href: "/admin/menus", ready: metrics.active_menu_count > 0 },
     { icon: CalendarCheck2, title: "Upcoming service", value: `${metrics.upcoming_service_count} published`, detail: metrics.upcoming_service_count ? "Future meal days are visible" : "No future service is published", href: "/admin/calendar", ready: metrics.upcoming_service_count > 0 },
   ];
 
