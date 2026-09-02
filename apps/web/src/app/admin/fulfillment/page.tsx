@@ -3,11 +3,17 @@ import { OperationsDashboard, type OperationRow } from "@/components/operations-
 import { currentSession } from "@/lib/auth";
 import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
+import { addDays, isYmd } from "@/lib/service-planning";
 
-export default async function FulfillmentPage() {
+export default async function FulfillmentPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
   const session = await currentSession();
   if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "SUPER_ADMIN") redirect(session.role === "ENTERPRISE_ADMIN" ? "/enterprise" : "/employee");
+  const params = await searchParams;
+  const initialRange = isYmd(params.from) && isYmd(params.to) && params.from <= params.to ? { from: params.from, to: params.to } : undefined;
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
+  const queryStart = initialRange?.from || addDays(today, -7);
+  const queryEnd = initialRange?.to || addDays(today, 14);
   const rows = await db()<OperationRow[]>`
     SELECT ms.id AS schedule_id, ms.schedule_date::text, ms.cutoff_time::text,
       e.name AS enterprise_name, dl.name AS location_name,
@@ -17,9 +23,9 @@ export default async function FulfillmentPage() {
     JOIN delivery_locations dl ON dl.id=mp.location_id
     JOIN menu_schedule_options mso ON mso.id=mp.selected_option_id
     JOIN menus m ON m.id=mso.menu_id
-    WHERE ms.schedule_date BETWEEN CURRENT_DATE-7 AND CURRENT_DATE+14
+    WHERE ms.schedule_date BETWEEN ${queryStart}::date AND ${queryEnd}::date
     GROUP BY ms.id,e.name,dl.name,mso.option_label,m.title
     ORDER BY ms.schedule_date,e.name,dl.name,mso.option_label
   `;
-  return <OperationsDashboard fullName={session.fullName} initialRows={[...rows]} />;
+  return <OperationsDashboard fullName={session.fullName} initialRows={[...rows]} initialRange={initialRange} />;
 }
