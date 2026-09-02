@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Building2, CalendarCheck2, ChefHat, CircleAlert, MapPin, MessageSquareText, PackageCheck, ShieldAlert } from "lucide-react";
 import { AppShell } from "@/components/ui/app-shell";
+import { CutoffSettings } from "@/components/cutoff-settings";
 import { Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
 import styles from "./admin-experience.module.css";
@@ -23,7 +24,7 @@ export type RecentEnterprise = {
   location_count: number;
 };
 
-export function AdminOverview({ fullName, metrics, recentEnterprises }: { fullName: string; metrics: AdminOverviewMetrics; recentEnterprises: RecentEnterprise[] }) {
+export function AdminOverview({ fullName, metrics, recentEnterprises, initialCutoffTime }: { fullName: string; metrics: AdminOverviewMetrics; recentEnterprises: RecentEnterprise[]; initialCutoffTime: string }) {
   const hasEnterprise = metrics.enterprise_count > 0;
   const readiness = [
     { icon: Building2, title: "Organizations", value: `${metrics.enterprise_count} active`, detail: `${metrics.location_count} delivery locations configured`, href: "/admin/organizations", ready: hasEnterprise },
@@ -33,6 +34,8 @@ export function AdminOverview({ fullName, metrics, recentEnterprises }: { fullNa
 
   return <AppShell workspace="Aamish operations" fullName={fullName} roleLabel="Aamish administrator" currentPath="/admin" navigation={superAdminNavigation}>
     <PageHeader eyebrow="Operations overview" title={`Good ${dhakaGreeting()}, ${firstName(fullName)}.`} description="See what is ready for service and where the team needs to act next." actions={<Link className={styles.primaryLink} href="/admin/organizations"><Building2 size={17} aria-hidden="true" />{hasEnterprise ? "Manage organizations" : "Add first enterprise"}</Link>} />
+
+    <CutoffSettings initialCutoffTime={initialCutoffTime} />
 
     {!hasEnterprise ? <EmptyState icon={<Building2 size={25} aria-hidden="true" />} title="Start with your first enterprise" description="There is no operational data yet. Add an enterprise, at least one delivery location, and its first administrator before creating menus or publishing service." action={<Link className={styles.primaryLink} href="/admin/organizations?new=enterprise">Add enterprise <ArrowRight size={16} aria-hidden="true" /></Link>} /> : <>
       <section className={styles.metricGrid} aria-label="Today’s operational summary">
