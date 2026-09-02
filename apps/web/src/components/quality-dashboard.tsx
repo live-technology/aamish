@@ -12,7 +12,7 @@ import styles from "./quality-workspace.module.css";
 
 export type ReviewRow = { id: string; rating: number; comment: string | null; full_name: string; enterprise_name: string; menu_title: string; created_at: string; schedule_date: string; photo_count: number; voice_url: string | null; voice_duration_seconds: number | null };
 export type ReviewDaySummary = { date: string; count: number; average: number };
-export type QualityIssue = { id: string; message: string | null; transcript: string | null; transcript_english: string | null; created_at: string; meal_service_date: string | null; quality_category: string | null; quality_severity: string | null; quality_status: string; quality_classification_source: string | null; enterprise_name: string; location_name: string | null };
+export type QualityIssue = { id: string; message: string | null; transcript: string | null; transcript_english: string | null; created_at: string; meal_service_date: string | null; quality_category: string | null; quality_severity: string | null; quality_status: string; quality_classification_source: string | null; enterprise_name: string; location_name: string | null; is_employee_meal_report?: boolean };
 type Failure = { id: string; message: string; requestId?: string };
 
 export function filterQualityIssues(issues: QualityIssue[], classification: string, status: string, severity: string, search: string) {
