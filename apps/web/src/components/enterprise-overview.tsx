@@ -28,7 +28,7 @@ export function EnterpriseOverview({ enterpriseName, fullName, metrics, upcoming
       <Metric icon={CalendarDays} value={metrics.today_orders} label="Meals confirmed today" />
       <Metric icon={Users} value={metrics.employee_count} label="Employees on roster" />
       <Metric icon={MapPin} value={metrics.location_count} label="Delivery locations" />
-      <Metric icon={Star} value={metrics.average_rating === null ? "—" : metrics.average_rating.toFixed(1)} label="30-day average rating" />
+      <Metric icon={Star} value={metrics.average_rating === null ? "—" : metrics.average_rating.toFixed(1)} label="45-day average rating" />
     </section>
 
     <div className={styles.overviewGrid}>

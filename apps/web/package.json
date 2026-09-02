@@ -10,7 +10,8 @@
     "test": "bun test",
     "bootstrap:admin": "bun scripts/bootstrap-admin.ts",
     "feedback:transcribe": "bun scripts/transcribe-feedback.ts",
-    "data:reset": "bun scripts/reset-beta-data.ts"
+    "data:reset": "bun scripts/reset-beta-data.ts",
+    "staging:seed": "bun scripts/seed-staging-history.ts"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",

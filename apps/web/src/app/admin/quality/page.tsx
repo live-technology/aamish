@@ -18,7 +18,7 @@ export default async function QualityPage() {
       LEFT JOIN meal_preferences mp ON mp.schedule_id=mr.schedule_id AND mp.employee_id=mr.employee_id
       LEFT JOIN menu_schedule_options mso ON mso.id=mp.selected_option_id LEFT JOIN menus m ON m.id=mso.menu_id
       LEFT JOIN review_photos rp ON rp.review_id=mr.id
-      WHERE ms.schedule_date>=CURRENT_DATE-29
+      WHERE ms.schedule_date>=CURRENT_DATE-45
       GROUP BY mr.id,ms.schedule_date,ep.full_name,e.name,m.title
       ORDER BY ms.schedule_date DESC,mr.created_at DESC
     `,

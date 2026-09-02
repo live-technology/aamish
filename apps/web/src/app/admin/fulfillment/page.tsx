@@ -17,7 +17,7 @@ export default async function FulfillmentPage() {
     JOIN delivery_locations dl ON dl.id=mp.location_id
     JOIN menu_schedule_options mso ON mso.id=mp.selected_option_id
     JOIN menus m ON m.id=mso.menu_id
-    WHERE ms.schedule_date BETWEEN CURRENT_DATE-7 AND CURRENT_DATE+14
+    WHERE ms.schedule_date BETWEEN CURRENT_DATE-45 AND CURRENT_DATE+14
     GROUP BY ms.id,e.name,dl.name,mso.option_label,m.title
     ORDER BY ms.schedule_date,e.name,dl.name,mso.option_label
   `;
