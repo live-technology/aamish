@@ -19,7 +19,7 @@ export default async function EnterprisePage() {
         (SELECT COUNT(*)::int FROM delivery_locations WHERE enterprise_id=${enterpriseId} AND is_active=TRUE) AS location_count,
         (SELECT COUNT(*)::int FROM meal_preferences mp JOIN menu_schedules ms ON ms.id=mp.schedule_id WHERE ms.enterprise_id=${enterpriseId} AND ms.schedule_date=CURRENT_DATE AND mp.is_opted_in=TRUE) AS today_orders,
         (SELECT COUNT(DISTINCT schedule_date)::int FROM menu_schedules WHERE enterprise_id=${enterpriseId} AND schedule_date BETWEEN CURRENT_DATE+1 AND CURRENT_DATE+14) AS upcoming_meal_days,
-        (SELECT AVG(mr.rating)::float FROM meal_reviews mr JOIN menu_schedules ms ON ms.id=mr.schedule_id WHERE ms.enterprise_id=${enterpriseId} AND ms.schedule_date>=CURRENT_DATE-30) AS average_rating`,
+        (SELECT AVG(mr.rating)::float FROM meal_reviews mr JOIN menu_schedules ms ON ms.id=mr.schedule_id WHERE ms.enterprise_id=${enterpriseId} AND ms.schedule_date>=CURRENT_DATE-45) AS average_rating`,
     db()<EnterpriseUpcomingMeal[]>`
       SELECT ms.id AS schedule_id,ms.schedule_date::text,ms.status,COUNT(mp.id)::int AS order_count
       FROM menu_schedules ms
