@@ -59,7 +59,7 @@ export function AppShell({
             <strong>{fullName}</strong>
             <span>{roleLabel}</span>
           </div>
-          <SignOutButton />
+          <SignOutButton labelled />
         </div>
       </aside>
 

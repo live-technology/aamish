@@ -23,4 +23,17 @@ describe("responsive layout contracts", () => {
     expect(admin).toContain(".metricCard{display:flex;align-items:center");
     expect(admin).toContain(".activeToggle{display:inline-flex;align-items:center");
   });
+
+  test("anchors desktop account controls to the viewport", async () => {
+    const ui = await readStylesheet("./ui/ui.module.css");
+    const shell = await readStylesheet("./ui/app-shell.tsx");
+    const signOut = await readStylesheet("./ui/sign-out-button.tsx");
+
+    expect(ui).toContain(".sidebar{position:sticky;top:0;height:100vh;min-height:0;align-self:start");
+    expect(ui).toContain(".sidebarFooter{display:grid;gap:8px;margin-top:auto");
+    expect(ui).toContain(".signOutButton{width:100%;justify-content:flex-start}");
+    expect(shell).toContain("<SignOutButton labelled />");
+    expect(signOut).toContain("Sign out");
+    expect(signOut).toContain('aria-label="Sign out"');
+  });
 });
