@@ -6,12 +6,14 @@ import { useMemo, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Button, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
+import { weekRangeLabel } from "@/lib/service-planning";
 import styles from "./fulfillment-dashboard.module.css";
 
 export type OperationRow = { schedule_id: string; schedule_date: string; cutoff_time: string; enterprise_name: string; location_name: string; option_label: string; menu_title: string; meal_count: number };
-export type FulfillmentScope = "TODAY" | "UPCOMING" | "RECENT" | "ALL";
+export type FulfillmentScope = "TODAY" | "UPCOMING" | "RECENT" | "CUSTOM" | "ALL";
+export type FulfillmentRange = { from: string; to: string };
 
-export function filterOperationRows(rows: OperationRow[], scope: FulfillmentScope, exactDate: string, search: string, today: string) {
+export function filterOperationRows(rows: OperationRow[], scope: FulfillmentScope, exactDate: string, search: string, today: string, range?: FulfillmentRange) {
   const normalized = search.trim().toLowerCase();
   const todayDate = new Date(`${today}T00:00:00`);
   const nextWeek = new Date(todayDate); nextWeek.setDate(nextWeek.getDate() + 7);
@@ -22,6 +24,7 @@ export function filterOperationRows(rows: OperationRow[], scope: FulfillmentScop
     if (!exactDate && scope === "TODAY" && row.schedule_date !== today) return false;
     if (!exactDate && scope === "UPCOMING" && (date < todayDate || date > nextWeek)) return false;
     if (!exactDate && scope === "RECENT" && (date >= todayDate || date < previousWeek)) return false;
+    if (!exactDate && scope === "CUSTOM" && range && (row.schedule_date < range.from || row.schedule_date > range.to)) return false;
     return !normalized || `${row.enterprise_name} ${row.location_name} ${row.menu_title} ${row.option_label}`.toLowerCase().includes(normalized);
   });
 }
@@ -30,24 +33,25 @@ export function fulfillmentTotals(rows: OperationRow[]) {
   return { meals: rows.reduce((sum, row) => sum + row.meal_count, 0), services: new Set(rows.map((row) => row.schedule_id)).size, locations: new Set(rows.map((row) => `${row.schedule_id}:${row.location_name}`)).size, menus: new Set(rows.map((row) => row.menu_title)).size };
 }
 
-export function OperationsDashboard({ fullName, initialRows }: { fullName: string; initialRows: OperationRow[] }) {
+export function OperationsDashboard({ fullName, initialRows, initialRange }: { fullName: string; initialRows: OperationRow[]; initialRange?: FulfillmentRange }) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
-  const [scope, setScope] = useState<FulfillmentScope>("UPCOMING");
+  const defaultScope: FulfillmentScope = initialRange ? "CUSTOM" : "UPCOMING";
+  const [scope, setScope] = useState<FulfillmentScope>(defaultScope);
   const [exactDate, setExactDate] = useState("");
   const [search, setSearch] = useState("");
-  const rows = useMemo(() => filterOperationRows(initialRows, scope, exactDate, search, today), [initialRows, scope, exactDate, search, today]);
+  const rows = useMemo(() => filterOperationRows(initialRows, scope, exactDate, search, today, initialRange), [initialRows, scope, exactDate, search, today, initialRange]);
   const totals = fulfillmentTotals(rows);
   const groups = useMemo(() => groupRows(rows), [rows]);
-  const hasFilters = Boolean(exactDate || search || scope !== "UPCOMING");
+  const hasFilters = Boolean(exactDate || search || scope !== defaultScope);
 
-  function clearFilters() { setScope("UPCOMING"); setExactDate(""); setSearch(""); }
+  function clearFilters() { setScope(defaultScope); setExactDate(""); setSearch(""); }
 
   return <AppShell workspace="Aamish operations" fullName={fullName} roleLabel="Aamish administrator" currentPath="/admin/fulfillment" navigation={superAdminNavigation}>
     <PageHeader eyebrow="Kitchen and dispatch" title="Fulfillment" description="See opted-in meal counts by service, destination, and menu. Counts remain live until each choice cutoff." actions={<Link className={styles.calendarLink} href="/admin/calendar"><CalendarDays size={17} aria-hidden="true" />Service calendar</Link>} />
     <section className={styles.summary} aria-label="Visible fulfillment totals"><Summary icon={<ChefHat />} value={totals.meals} label="Meals to prepare" /><Summary icon={<CalendarDays />} value={totals.services} label="Meal services" /><Summary icon={<MapPin />} value={totals.locations} label="Dispatch stops" /><Summary icon={<UtensilsCrossed />} value={totals.menus} label="Distinct menus" /></section>
 
     {initialRows.length === 0 ? <EmptyState icon={<ChefHat size={25} aria-hidden="true" />} title="No meal allocations yet" description="Publish a service and add active employees before kitchen and dispatch counts can be compiled." action={<Link className={styles.emptyLink} href="/admin/calendar">Open service calendar <ArrowRight size={16} aria-hidden="true" /></Link>} /> : <>
-      <section className={styles.filters} aria-label="Fulfillment filters"><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Search fulfillment</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search organization, location, or menu" /></label><label><span>Service period</span><select value={scope} onChange={(event) => { setScope(event.target.value as FulfillmentScope); setExactDate(""); }}><option value="TODAY">Today</option><option value="UPCOMING">Next 7 days</option><option value="RECENT">Previous 7 days</option><option value="ALL">All loaded dates</option></select></label><label><span>Exact date</span><input type="date" value={exactDate} onChange={(event) => setExactDate(event.target.value)} /></label>{hasFilters && <Button type="button" variant="quiet" size="small" onClick={clearFilters}><X size={14} aria-hidden="true" />Reset</Button>}</section>
+      <section className={styles.filters} aria-label="Fulfillment filters"><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Search fulfillment</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search organization, location, or menu" /></label><label><span>Service period</span><select value={scope} onChange={(event) => { setScope(event.target.value as FulfillmentScope); setExactDate(""); }}>{initialRange && <option value="CUSTOM">Planning week · {weekRangeLabel(initialRange.from)}</option>}<option value="TODAY">Today</option><option value="UPCOMING">Next 7 days</option><option value="RECENT">Previous 7 days</option><option value="ALL">All loaded dates</option></select></label><label><span>Exact date</span><input type="date" value={exactDate} onChange={(event) => setExactDate(event.target.value)} /></label>{hasFilters && <Button type="button" variant="quiet" size="small" onClick={clearFilters}><X size={14} aria-hidden="true" />Reset</Button>}</section>
       <div className={styles.resultHeading}><div><p>Dispatch plan</p><h2>{groups.length} {groups.length === 1 ? "destination" : "destinations"}</h2></div><span>{totals.meals} opted-in {totals.meals === 1 ? "meal" : "meals"}</span></div>
       {groups.length === 0 ? <EmptyState title="No allocations match" description="Change the service period, exact date, or search to see other kitchen counts." action={<Button type="button" variant="secondary" onClick={clearFilters}>Reset filters</Button>} /> : <section className={styles.groups} aria-label="Fulfillment dispatch plan">{groups.map((group) => <DispatchGroup group={group} key={group.key} />)}</section>}
     </>}

@@ -20,4 +20,9 @@ describe("fulfillment dashboard contracts", () => {
     expect(filterOperationRows(rows, "ALL", "", "gulshan", "2026-09-01")[0].schedule_id).toBe("s-2");
     expect(fulfillmentTotals(rows)).toEqual({ meals: 19, services: 3, locations: 3, menus: 4 });
   });
+
+  test("carries an exact planning week into fulfillment", () => {
+    const selected = filterOperationRows(rows, "CUSTOM", "", "", "2026-09-03", { from: "2026-09-04", to: "2026-09-09" });
+    expect(selected.map(({ schedule_date }) => schedule_date)).toEqual(["2026-09-04"]);
+  });
 });
