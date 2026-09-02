@@ -33,6 +33,7 @@ const messages: Record<string, string> = {
   PACKAGE_IMAGE_REQUIRED: "Choose a package image.",
   PAST_MEAL_DATE: "Choose today or a future meal date.",
   QUALITY_UPDATE_FAILED: "The quality triage could not be saved. Try again or share the request ID with support.",
+  REVIEWS_FETCH_FAILED: "Reviews for that day could not be loaded. Try again or share the request ID with support.",
   REVIEW_EDIT_WINDOW_CLOSED: "This review is read-only because its 24-hour edit window has ended.",
   REVIEW_NOT_AVAILABLE: "This meal is not available for review. Choose a previous meal you received.",
   SCHEDULE_ALREADY_EXISTS: "This enterprise already has a lunch menu for that date.",
