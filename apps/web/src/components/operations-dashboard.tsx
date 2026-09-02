@@ -41,7 +41,13 @@ export function OperationsDashboard({ fullName, initialRows, initialRange }: { f
 
   function exportCsv() {
     const url = URL.createObjectURL(new Blob([fulfillmentCsv(visibleRows)], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `aamish-fulfillment-${range.from}-to-${range.to}.csv`; anchor.click(); URL.revokeObjectURL(url);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `aamish-fulfillment-${range.from}-to-${range.to}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   return <AppShell workspace="Aamish operations" fullName={fullName} roleLabel="Aamish administrator" currentPath="/admin/fulfillment" navigation={superAdminNavigation}>
@@ -51,7 +57,7 @@ export function OperationsDashboard({ fullName, initialRows, initialRange }: { f
     <section className={styles.summary} aria-label="Visible fulfillment totals"><Summary icon={<ChefHat />} value={totals.meals} label="Meals to prepare" /><Summary icon={<CalendarDays />} value={totals.services} label="Meal services" /><Summary icon={<MapPin />} value={totals.locations} label="Delivery locations" /><Summary icon={<UtensilsCrossed />} value={totals.menus} label="Menu variations" /></section>
     <section className={styles.toolbar} aria-label="Fulfillment tools"><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Search fulfillment</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search enterprise, location, or menu" /></label><Button type="button" variant="secondary" size="small" onClick={exportCsv} disabled={visibleRows.length === 0}><Download size={15} aria-hidden="true" />Export visible CSV</Button></section>
     <div className={styles.viewTabs} role="tablist" aria-label="Fulfillment views"><button role="tab" aria-selected={view === "ENTERPRISE"} onClick={() => setView("ENTERPRISE")}><Warehouse size={16} aria-hidden="true" />Enterprise plan</button><button role="tab" aria-selected={view === "PROCUREMENT"} onClick={() => setView("PROCUREMENT")}><UtensilsCrossed size={16} aria-hidden="true" />Procurement</button><button role="tab" aria-selected={view === "DISPATCH"} onClick={() => setView("DISPATCH")}><Truck size={16} aria-hidden="true" />Dispatch</button></div>
-    <div className={styles.resultHeading}><div><p>{formatRange(range)}</p><h2>{view === "ENTERPRISE" ? `${enterpriseGroups.length} enterprises` : view === "PROCUREMENT" ? `${procurement.length} menu requirements` : `${dispatch.length} dispatch stops`}</h2></div><span>{totals.meals} opted-in {totals.meals === 1 ? "meal" : "meals"}{search && " after search"}</span></div>
+    <div className={styles.resultHeading}><div><p>{formatRange(range)}</p><h2>{view === "ENTERPRISE" ? `${enterpriseGroups.length} ${enterpriseGroups.length === 1 ? "enterprise" : "enterprises"}` : view === "PROCUREMENT" ? `${procurement.length} menu ${procurement.length === 1 ? "requirement" : "requirements"}` : `${dispatch.length} dispatch ${dispatch.length === 1 ? "stop" : "stops"}`}</h2></div><span>{totals.meals} opted-in {totals.meals === 1 ? "meal" : "meals"}{search && " after search"}</span></div>
     {visibleRows.length === 0 ? <EmptyState icon={<ChefHat size={25} aria-hidden="true" />} title="No meal requirements found" description={search ? "No enterprise, location, or menu matches this search." : "No employees have opted in for a published service in this date range."} action={search ? <Button type="button" variant="secondary" onClick={() => setSearch("")}>Clear search</Button> : <Link className={styles.emptyLink} href="/admin/calendar">Open service planning</Link>} /> : <>{view === "ENTERPRISE" && <EnterprisePlan groups={enterpriseGroups} />}{view === "PROCUREMENT" && <ProcurementTable rows={procurement} />}{view === "DISPATCH" && <DispatchPlan groups={dispatch} />}</>}
   </AppShell>;
 }
