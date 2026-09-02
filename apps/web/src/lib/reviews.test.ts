@@ -9,7 +9,7 @@ describe("eligibleReviewSchedule", () => {
       { id: "future", schedule_date: "2026-09-02", can_review: true },
       { id: "today", schedule_date: "2026-09-01", can_review: true },
     ];
-    expect(eligibleReviewSchedule(schedules, "2026-09-01")?.id).toBe("old");
+    expect(eligibleReviewSchedule(schedules, "2026-09-01")?.id).toBe("today");
   });
 
   test("returns undefined when no meal is reviewable", () => {

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         WHERE ms.id=${scheduleId} AND ms.enterprise_id=${session.enterpriseId}
           AND mp.employee_id=${session.employeeId} AND mp.is_opted_in=TRUE
           AND ms.status<>'CANCELLED'
-          AND ms.schedule_date < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date
+          AND ms.schedule_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date
       `;
       if (!eligible[0]) throw new Error("REVIEW_NOT_AVAILABLE");
       const existing = await transaction<ExistingReview[]>`

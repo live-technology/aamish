@@ -15,12 +15,12 @@ export async function employeePageData() {
     db()<EmployeeSchedule[]>`
       SELECT ms.id,ms.schedule_date::text,ms.cutoff_time::text,ms.status,
         COALESCE(mp.is_opted_in,FALSE) AS is_opted_in,mp.selected_option_id,dl.name AS location_name,
-        (mp.id IS NOT NULL AND mp.is_opted_in=TRUE AND ms.status<>'CANCELLED' AND ms.schedule_date < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date) AS can_review,
+        (mp.id IS NOT NULL AND mp.is_opted_in=TRUE AND ms.status<>'CANCELLED' AND ms.schedule_date <= (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date) AS can_review,
         mr.id AS review_id,mr.rating AS review_rating,mr.comment AS review_comment,mr.created_at::text AS review_created_at,
         mr.updated_at::text AS review_updated_at,mr.voice_public_id AS review_voice_public_id,mr.voice_url AS review_voice_url,
         mr.voice_duration_seconds AS review_voice_duration_seconds,
         COALESCE((SELECT json_agg(json_build_object('publicId',rp.cloudinary_public_id,'url',rp.image_url,'thumbnailUrl',COALESCE(rp.thumbnail_url,rp.image_url)) ORDER BY rp.created_at) FROM review_photos rp WHERE rp.review_id=mr.id),'[]') AS review_photos,
-        COALESCE(json_agg(json_build_object('id',mso.id,'label',mso.option_label,'title',m.title,'description',m.description,'image_url',m.image_mobile_url) ORDER BY mso.option_label) FILTER(WHERE mso.id IS NOT NULL),'[]') AS options
+        COALESCE(json_agg(json_build_object('id',mso.id,'label',mso.option_label,'title',m.title,'description',m.description,'image_url',COALESCE(m.image_mobile_url,m.image_desktop_url),'price',m.price::float) ORDER BY mso.option_label) FILTER(WHERE mso.id IS NOT NULL),'[]') AS options
       FROM menu_schedules ms
       JOIN employees ep ON ep.id=${session.employeeId} AND ep.enterprise_id=${session.enterpriseId}
       JOIN delivery_locations dl ON dl.id=ep.location_id

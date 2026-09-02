@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, Star, Users } from "lucide-react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
+import { ResilientImage } from "@/components/ui/resilient-image";
 import { enterpriseNavigation } from "@/lib/enterprise-navigation";
 import styles from "./enterprise-experience.module.css";
 
@@ -18,6 +19,8 @@ export type EnterpriseUpcomingMeal = {
   schedule_date: string;
   status: string;
   order_count: number;
+  opted_out_count: number;
+  menu_options: Array<{ title: string; image_url: string | null }>;
 };
 
 export function EnterpriseOverview({ enterpriseName, fullName, metrics, upcomingMeals }: { enterpriseName: string; fullName: string; metrics: EnterpriseOverviewMetrics; upcomingMeals: EnterpriseUpcomingMeal[] }) {
@@ -34,7 +37,7 @@ export function EnterpriseOverview({ enterpriseName, fullName, metrics, upcoming
     <div className={styles.overviewGrid}>
       <section>
         <div className={styles.sectionHeading}><div><p>Next services</p><h2>{metrics.upcoming_meal_days} upcoming meal {metrics.upcoming_meal_days === 1 ? "day" : "days"}</h2></div><Link href="/enterprise/meals">View all</Link></div>
-        {upcomingMeals.length === 0 ? <EmptyState icon={<CalendarDays size={25} aria-hidden="true" />} title="No upcoming service" description="Aamish has not published a meal service for your organization in the next 14 days." /> : <Card className={styles.upcomingList} padded={false}>{upcomingMeals.map((meal) => <article className={styles.upcomingRow} key={meal.schedule_id}><time dateTime={meal.schedule_date}><strong>{formatDay(meal.schedule_date)}</strong><span>{formatDate(meal.schedule_date)}</span></time><div><strong>{meal.order_count} confirmed meals</strong><span>Across active delivery locations and menu options</span></div><StatusBadge tone={meal.status === "PUBLISHED" ? "success" : "neutral"}>{meal.status}</StatusBadge></article>)}</Card>}
+        {upcomingMeals.length === 0 ? <EmptyState icon={<CalendarDays size={25} aria-hidden="true" />} title="No upcoming service" description="Aamish has not published a meal service for your organization in the next 14 days." /> : <Card className={styles.upcomingList} padded={false}>{upcomingMeals.map((meal) => <article className={styles.upcomingRow} key={meal.schedule_id}><time dateTime={meal.schedule_date}><strong>{formatDay(meal.schedule_date)}</strong><span>{formatDate(meal.schedule_date)}</span></time><div className={styles.upcomingMenus}>{meal.menu_options.map((menu) => <span className={styles.upcomingMenu} key={menu.title}><span className={styles.upcomingImage}><ResilientImage src={menu.image_url} surface="enterprise-meal" fallbackLabel="Meal image unavailable" compactFallback alt="" fill sizes="42px" /></span><strong>{menu.title}</strong></span>)}</div><div className={styles.upcomingCount}><strong>{meal.order_count} confirmed</strong><span>{meal.opted_out_count} skipped</span></div><StatusBadge tone={meal.status === "PUBLISHED" ? "success" : "neutral"}>{meal.status}</StatusBadge></article>)}</Card>}
       </section>
 
       <Card className={styles.todayCard}>

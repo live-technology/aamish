@@ -32,7 +32,7 @@ async function uploadPhoto(file: File): Promise<ReviewPhoto> {
 }
 
 export function EmployeeReviewWorkspace({ schedules, today, onSaved }: { schedules: EmployeeSchedule[]; today: string; onSaved: (scheduleId: string, review: Partial<EmployeeSchedule>) => void }) {
-  const history = useMemo(() => schedules.filter((item) => item.schedule_date < today).sort((a, b) => b.schedule_date.localeCompare(a.schedule_date)), [schedules, today]);
+  const history = useMemo(() => schedules.filter((item) => item.schedule_date <= today).sort((a, b) => b.schedule_date.localeCompare(a.schedule_date)), [schedules, today]);
   const initialTarget = history.find((item) => item.can_review) || history[0];
   const [selectedId, setSelectedId] = useState(initialTarget?.id || "");
   const target = history.find((item) => item.id === selectedId) || initialTarget;
