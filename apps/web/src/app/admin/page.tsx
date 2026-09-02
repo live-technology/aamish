@@ -3,12 +3,13 @@ import { AdminOverview, type AdminOverviewMetrics, type RecentEnterprise } from 
 import { currentSession } from "@/lib/auth";
 import { SESSION_ENDED_LOGIN_PATH } from "@/lib/auth-navigation";
 import { db } from "@/lib/db";
+import { readCutoffTime } from "@/lib/platform-cutoff";
 
 export default async function AdminPage() {
   const session = await currentSession();
   if (!session) redirect(SESSION_ENDED_LOGIN_PATH);
   if (session.role !== "SUPER_ADMIN") redirect(session.role === "ENTERPRISE_ADMIN" ? "/enterprise" : "/employee");
-  const [metrics, recentEnterprises] = await Promise.all([
+  const [metrics, recentEnterprises, cutoffRows] = await Promise.all([
     db()<AdminOverviewMetrics[]>`
       SELECT
         (SELECT COUNT(*)::int FROM enterprises WHERE status = 'ACTIVE') AS enterprise_count,
@@ -28,7 +29,8 @@ export default async function AdminPage() {
       ORDER BY e.created_at DESC
       LIMIT 4
     `,
+    db()<{ local_time: string | null }[]>`SELECT value->>'local_time' AS local_time FROM platform_settings WHERE key='MEAL_CUTOFF'`,
   ]);
 
-  return <AdminOverview fullName={session.fullName} metrics={metrics[0]} recentEnterprises={[...recentEnterprises]} />;
+  return <AdminOverview fullName={session.fullName} metrics={metrics[0]} recentEnterprises={[...recentEnterprises]} initialCutoffTime={readCutoffTime(cutoffRows[0]?.local_time)} />;
 }

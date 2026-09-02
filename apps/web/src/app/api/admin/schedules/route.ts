@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { log, logError } from "@/lib/logger";
+import { DEFAULT_CUTOFF_TIME, PLATFORM_TIMEZONE, readCutoffTime } from "@/lib/platform-cutoff";
 
 export async function GET() {
   const requestId = crypto.randomUUID();
@@ -28,16 +29,17 @@ export async function POST(request: NextRequest) {
   if (session?.role !== "SUPER_ADMIN") return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
   try {
     const body = await request.json();
-    if (!body.enterpriseId || !body.scheduleDate || !body.cutoffTime || !Array.isArray(body.menuIds) || body.menuIds.length < 1) return NextResponse.json({ error: "MISSING_REQUIRED_FIELDS", requestId }, { status: 400 });
+    if (!body.enterpriseId || !body.scheduleDate || !Array.isArray(body.menuIds) || body.menuIds.length < 1) return NextResponse.json({ error: "MISSING_REQUIRED_FIELDS", requestId }, { status: 400 });
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
     if (body.scheduleDate < today) return NextResponse.json({ error: "PAST_MEAL_DATE", requestId }, { status: 400 });
-    if (Number.isNaN(new Date(body.cutoffTime).valueOf()) || new Date(body.cutoffTime) <= new Date()) return NextResponse.json({ error: "CUTOFF_MUST_BE_FUTURE", requestId }, { status: 400 });
     const uniqueMenuIds = [...new Set(body.menuIds)] as string[];
     if (uniqueMenuIds.length !== body.menuIds.length) return NextResponse.json({ error: "DUPLICATE_PACKAGE_OPTION", requestId }, { status: 400 });
     const result = await db().begin(async (transaction) => {
+      const cutoffRows = await transaction<{ local_time: string | null }[]>`SELECT value->>'local_time' AS local_time FROM platform_settings WHERE key='MEAL_CUTOFF'`;
+      const cutoffTime = readCutoffTime(cutoffRows[0]?.local_time ?? DEFAULT_CUTOFF_TIME);
       const schedules = await transaction<{ id: string }[]>`
         INSERT INTO menu_schedules (enterprise_id, menu_id, schedule_date, cutoff_time, status)
-        VALUES (${body.enterpriseId}, ${uniqueMenuIds[0]}, ${body.scheduleDate}, ${new Date(body.cutoffTime).toISOString()}, 'PUBLISHED') RETURNING id
+        VALUES (${body.enterpriseId}, ${uniqueMenuIds[0]}, ${body.scheduleDate}, (${body.scheduleDate}::date + ${cutoffTime}::time) AT TIME ZONE ${PLATFORM_TIMEZONE}::text, 'PUBLISHED') RETURNING id
       `;
       let firstOptionId = "";
       for (const [index, menuId] of uniqueMenuIds.entries()) {
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest) {
         if (index === 0) firstOptionId = options[0].id;
       }
       await transaction`INSERT INTO meal_preferences (schedule_id,employee_id,location_id,selected_option_id) SELECT ${schedules[0].id},id,location_id,${firstOptionId} FROM employees WHERE enterprise_id=${body.enterpriseId} AND is_active=TRUE ON CONFLICT DO NOTHING`;
-      return { scheduleId: schedules[0].id, optionCount: uniqueMenuIds.length };
+      return { scheduleId: schedules[0].id, optionCount: uniqueMenuIds.length, cutoffTime };
     });
     log("schedule.published", { requestId, actorUserId: session.userId, ...result, enterpriseId: body.enterpriseId, scheduleDate: body.scheduleDate });
     return NextResponse.json({ ...result, requestId }, { status: 201 });
