@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { filterOperationRows, fulfillmentTotals, type OperationRow } from "./operations-dashboard";
+import { countState, filterOperationRows, fulfillmentCsv, fulfillmentTotals, groupByEnterprise, groupForDispatch, presetRange, procurementTotals, validFulfillmentRange, type OperationRow } from "@/lib/fulfillment";
 
 const rows: OperationRow[] = [
   { schedule_id: "s-1", schedule_date: "2026-09-01", cutoff_time: "2026-09-01T04:00:00.000Z", enterprise_name: "Live Technology", location_name: "Banani", option_label: "A", menu_title: "Homestyle lunch", meal_count: 7 },
@@ -9,20 +9,34 @@ const rows: OperationRow[] = [
 ];
 
 describe("fulfillment dashboard contracts", () => {
-  test("filters the operational window and exact-date override", () => {
-    expect(filterOperationRows(rows, "UPCOMING", "", "", "2026-09-01").map((row) => row.schedule_id)).toEqual(["s-1", "s-1", "s-2"]);
-    expect(filterOperationRows(rows, "RECENT", "", "", "2026-09-01").map((row) => row.schedule_id)).toEqual(["s-3"]);
-    expect(filterOperationRows(rows, "RECENT", "2026-09-04", "", "2026-09-01").map((row) => row.schedule_id)).toEqual(["s-2"]);
+  test("builds precise quick ranges and rejects invalid custom dates", () => {
+    expect(presetRange("TODAY", "2026-09-01")).toEqual({ from: "2026-09-01", to: "2026-09-01" });
+    expect(presetRange("NEXT_7", "2026-09-01")).toEqual({ from: "2026-09-01", to: "2026-09-07" });
+    expect(presetRange("PREVIOUS_7", "2026-09-01")).toEqual({ from: "2026-08-25", to: "2026-08-31" });
+    expect(validFulfillmentRange("2026-09-07", "2026-09-01")).toBeUndefined();
+    expect(validFulfillmentRange("bad", "2026-09-01")).toBeUndefined();
   });
 
   test("searches organization, location, and menu without changing counts", () => {
-    expect(filterOperationRows(rows, "ALL", "", "vegetarian", "2026-09-01")).toHaveLength(1);
-    expect(filterOperationRows(rows, "ALL", "", "gulshan", "2026-09-01")[0].schedule_id).toBe("s-2");
+    expect(filterOperationRows(rows, "vegetarian")).toHaveLength(1);
+    expect(filterOperationRows(rows, "gulshan")[0].schedule_id).toBe("s-2");
     expect(fulfillmentTotals(rows)).toEqual({ meals: 19, services: 3, locations: 3, menus: 4 });
   });
 
-  test("carries an exact planning week into fulfillment", () => {
-    const selected = filterOperationRows(rows, "CUSTOM", "", "", "2026-09-03", { from: "2026-09-04", to: "2026-09-09" });
-    expect(selected.map(({ schedule_date }) => schedule_date)).toEqual(["2026-09-04"]);
+  test("aggregates enterprise, location, menu, and dispatch quantities", () => {
+    const now = new Date("2026-09-02T00:00:00.000Z");
+    const enterprises = groupByEnterprise(rows, now);
+    expect(enterprises[0]).toMatchObject({ name: "Live Technology", total: 10, open: 0, locked: 10 });
+    expect(enterprises[0].locations[0]).toMatchObject({ name: "Banani", total: 10 });
+    expect(procurementTotals(rows, now).find(({ menu }) => menu === "Premium lunch")).toMatchObject({ total: 5, open: 5, locked: 0, enterprises: 1, locations: 1 });
+    expect(groupForDispatch(rows)).toHaveLength(3);
+  });
+
+  test("exports exactly the filtered rows with safe CSV cells and count state", () => {
+    const special = { ...rows[0], enterprise_name: "Acme, Ltd" };
+    const csv = fulfillmentCsv([special], new Date("2026-09-02T00:00:00.000Z"));
+    expect(csv.split("\n")).toHaveLength(2);
+    expect(csv).toContain('2026-09-01,"Acme, Ltd",Banani,Homestyle lunch,A,7,LOCKED');
+    expect(countState(rows[2].cutoff_time, new Date("2026-09-02T00:00:00.000Z"))).toBe("OPEN");
   });
 });
