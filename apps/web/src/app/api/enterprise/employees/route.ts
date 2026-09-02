@@ -6,7 +6,7 @@ import { log, logError } from "@/lib/logger";
 export async function GET() {
   const requestId = crypto.randomUUID(); const session = await currentSession();
   if (session?.role !== "ENTERPRISE_ADMIN" || !session.enterpriseId) return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
-  const employees = await db()`SELECT ep.id, ep.employee_code, ep.full_name, ep.email, ep.phone, ep.is_active, dl.name AS location_name, au.username FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id WHERE ep.enterprise_id=${session.enterpriseId} ORDER BY ep.created_at DESC`;
+  const employees = await db()`SELECT ep.id, ep.employee_code, ep.full_name, ep.email, ep.phone, ep.is_active, ep.location_id, dl.name AS location_name, au.username FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id WHERE ep.enterprise_id=${session.enterpriseId} ORDER BY ep.created_at DESC`;
   return NextResponse.json({ employees, requestId });
 }
 

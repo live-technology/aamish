@@ -14,7 +14,7 @@ export default async function EnterprisePeoplePage() {
   const [enterpriseRows, locations, employees] = await Promise.all([
     db()<{ name: string }[]>`SELECT name FROM enterprises WHERE id=${enterpriseId}`,
     db()<EnterpriseLocation[]>`SELECT id,name,code FROM delivery_locations WHERE enterprise_id=${enterpriseId} AND is_active=TRUE ORDER BY name`,
-    db()<EnterpriseEmployee[]>`SELECT ep.id,ep.employee_code,ep.full_name,ep.email,ep.phone,ep.is_active,dl.name AS location_name,au.username FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id WHERE ep.enterprise_id=${enterpriseId} ORDER BY ep.created_at DESC`,
+    db()<EnterpriseEmployee[]>`SELECT ep.id,ep.employee_code,ep.full_name,ep.email,ep.phone,ep.is_active,ep.location_id,dl.name AS location_name,au.username FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id WHERE ep.enterprise_id=${enterpriseId} ORDER BY ep.created_at DESC`,
   ]);
   return <EnterprisePeople enterpriseName={enterpriseRows[0]?.name || "Enterprise"} fullName={session.fullName} locations={[...locations]} initialEmployees={[...employees]} />;
 }
