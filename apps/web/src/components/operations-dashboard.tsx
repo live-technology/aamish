@@ -1,66 +1,67 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarDays, ChefHat, Clock3, MapPin, Search, UtensilsCrossed, X } from "lucide-react";
+import { CalendarDays, ChefHat, ChevronDown, Clock3, Download, MapPin, Search, Truck, UtensilsCrossed, Warehouse } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/ui/app-shell";
-import { Button, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
+import { Button, EmptyState, ErrorState, PageHeader, StatusBadge } from "@/components/ui/primitives";
+import { countState, filterOperationRows, fulfillmentCsv, fulfillmentTotals, groupByEnterprise, groupForDispatch, presetRange, procurementTotals, type FulfillmentRange, type OperationRow } from "@/lib/fulfillment";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
-import { weekRangeLabel } from "@/lib/service-planning";
 import styles from "./fulfillment-dashboard.module.css";
 
-export type OperationRow = { schedule_id: string; schedule_date: string; cutoff_time: string; enterprise_name: string; location_name: string; option_label: string; menu_title: string; meal_count: number };
-export type FulfillmentScope = "TODAY" | "UPCOMING" | "RECENT" | "CUSTOM" | "ALL";
-export type FulfillmentRange = { from: string; to: string };
+type View = "ENTERPRISE" | "PROCUREMENT" | "DISPATCH";
 
-export function filterOperationRows(rows: OperationRow[], scope: FulfillmentScope, exactDate: string, search: string, today: string, range?: FulfillmentRange) {
-  const normalized = search.trim().toLowerCase();
-  const todayDate = new Date(`${today}T00:00:00`);
-  const nextWeek = new Date(todayDate); nextWeek.setDate(nextWeek.getDate() + 7);
-  const previousWeek = new Date(todayDate); previousWeek.setDate(previousWeek.getDate() - 7);
-  return rows.filter((row) => {
-    if (exactDate && row.schedule_date !== exactDate) return false;
-    const date = new Date(`${row.schedule_date}T00:00:00`);
-    if (!exactDate && scope === "TODAY" && row.schedule_date !== today) return false;
-    if (!exactDate && scope === "UPCOMING" && (date < todayDate || date > nextWeek)) return false;
-    if (!exactDate && scope === "RECENT" && (date >= todayDate || date < previousWeek)) return false;
-    if (!exactDate && scope === "CUSTOM" && range && (row.schedule_date < range.from || row.schedule_date > range.to)) return false;
-    return !normalized || `${row.enterprise_name} ${row.location_name} ${row.menu_title} ${row.option_label}`.toLowerCase().includes(normalized);
-  });
-}
-
-export function fulfillmentTotals(rows: OperationRow[]) {
-  return { meals: rows.reduce((sum, row) => sum + row.meal_count, 0), services: new Set(rows.map((row) => row.schedule_id)).size, locations: new Set(rows.map((row) => `${row.schedule_id}:${row.location_name}`)).size, menus: new Set(rows.map((row) => row.menu_title)).size };
-}
-
-export function OperationsDashboard({ fullName, initialRows, initialRange }: { fullName: string; initialRows: OperationRow[]; initialRange?: FulfillmentRange }) {
+export function OperationsDashboard({ fullName, initialRows, initialRange }: { fullName: string; initialRows: OperationRow[]; initialRange: FulfillmentRange }) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
-  const defaultScope: FulfillmentScope = initialRange ? "CUSTOM" : "UPCOMING";
-  const [scope, setScope] = useState<FulfillmentScope>(defaultScope);
-  const [exactDate, setExactDate] = useState("");
+  const [rows, setRows] = useState(initialRows);
+  const [range, setRange] = useState(initialRange);
+  const [draftRange, setDraftRange] = useState(initialRange);
   const [search, setSearch] = useState("");
-  const rows = useMemo(() => filterOperationRows(initialRows, scope, exactDate, search, today, initialRange), [initialRows, scope, exactDate, search, today, initialRange]);
-  const totals = fulfillmentTotals(rows);
-  const groups = useMemo(() => groupRows(rows), [rows]);
-  const hasFilters = Boolean(exactDate || search || scope !== defaultScope);
+  const [view, setView] = useState<View>("ENTERPRISE");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<{ requestId?: string }>();
+  const visibleRows = useMemo(() => filterOperationRows(rows, search), [rows, search]);
+  const totals = fulfillmentTotals(visibleRows);
+  const enterpriseGroups = useMemo(() => groupByEnterprise(visibleRows), [visibleRows]);
+  const procurement = useMemo(() => procurementTotals(visibleRows), [visibleRows]);
+  const dispatch = useMemo(() => groupForDispatch(visibleRows), [visibleRows]);
+  const invalidDraft = !draftRange.from || !draftRange.to || draftRange.from > draftRange.to;
 
-  function clearFilters() { setScope(defaultScope); setExactDate(""); setSearch(""); }
+  async function loadRange(next: FulfillmentRange) {
+    setDraftRange(next); setLoading(true); setError(undefined);
+    try {
+      const response = await fetch(`/api/admin/fulfillment?from=${encodeURIComponent(next.from)}&to=${encodeURIComponent(next.to)}`);
+      const body = await response.json() as { rows?: OperationRow[]; requestId?: string };
+      if (!response.ok || !body.rows) throw Object.assign(new Error(), { requestId: body.requestId });
+      setRows(body.rows); setRange(next);
+      window.history.replaceState(null, "", `/admin/fulfillment?from=${encodeURIComponent(next.from)}&to=${encodeURIComponent(next.to)}`);
+    } catch (cause) { setError({ requestId: (cause as { requestId?: string }).requestId }); }
+    finally { setLoading(false); }
+  }
+
+  function exportCsv() {
+    const url = URL.createObjectURL(new Blob([fulfillmentCsv(visibleRows)], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = `aamish-fulfillment-${range.from}-to-${range.to}.csv`; anchor.click(); URL.revokeObjectURL(url);
+  }
 
   return <AppShell workspace="Aamish operations" fullName={fullName} roleLabel="Aamish administrator" currentPath="/admin/fulfillment" navigation={superAdminNavigation}>
-    <PageHeader eyebrow="Kitchen and dispatch" title="Fulfillment" description="See opted-in meal counts by service, destination, and menu. Counts remain live until each choice cutoff." actions={<Link className={styles.calendarLink} href="/admin/calendar"><CalendarDays size={17} aria-hidden="true" />Service calendar</Link>} />
-    <section className={styles.summary} aria-label="Visible fulfillment totals"><Summary icon={<ChefHat />} value={totals.meals} label="Meals to prepare" /><Summary icon={<CalendarDays />} value={totals.services} label="Meal services" /><Summary icon={<MapPin />} value={totals.locations} label="Dispatch stops" /><Summary icon={<UtensilsCrossed />} value={totals.menus} label="Distinct menus" /></section>
-
-    {initialRows.length === 0 ? <EmptyState icon={<ChefHat size={25} aria-hidden="true" />} title="No meal allocations yet" description="Publish a service and add active employees before kitchen and dispatch counts can be compiled." action={<Link className={styles.emptyLink} href="/admin/calendar">Open service calendar <ArrowRight size={16} aria-hidden="true" /></Link>} /> : <>
-      <section className={styles.filters} aria-label="Fulfillment filters"><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Search fulfillment</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search organization, location, or menu" /></label><label><span>Service period</span><select value={scope} onChange={(event) => { setScope(event.target.value as FulfillmentScope); setExactDate(""); }}>{initialRange && <option value="CUSTOM">Planning week · {weekRangeLabel(initialRange.from)}</option>}<option value="TODAY">Today</option><option value="UPCOMING">Next 7 days</option><option value="RECENT">Previous 7 days</option><option value="ALL">All loaded dates</option></select></label><label><span>Exact date</span><input type="date" value={exactDate} onChange={(event) => setExactDate(event.target.value)} /></label>{hasFilters && <Button type="button" variant="quiet" size="small" onClick={clearFilters}><X size={14} aria-hidden="true" />Reset</Button>}</section>
-      <div className={styles.resultHeading}><div><p>Dispatch plan</p><h2>{groups.length} {groups.length === 1 ? "destination" : "destinations"}</h2></div><span>{totals.meals} opted-in {totals.meals === 1 ? "meal" : "meals"}</span></div>
-      {groups.length === 0 ? <EmptyState title="No allocations match" description="Change the service period, exact date, or search to see other kitchen counts." action={<Button type="button" variant="secondary" onClick={clearFilters}>Reset filters</Button>} /> : <section className={styles.groups} aria-label="Fulfillment dispatch plan">{groups.map((group) => <DispatchGroup group={group} key={group.key} />)}</section>}
-    </>}
+    <PageHeader eyebrow="Kitchen and dispatch" title="Fulfillment workspace" description="Turn live meal choices into clear kitchen quantities and destination-ready dispatch counts." actions={<Link className={styles.calendarLink} href={`/admin/calendar?start=${range.from}`}><CalendarDays size={17} aria-hidden="true" />Service planning</Link>} />
+    <section className={styles.rangePanel} aria-label="Fulfillment date range"><div className={styles.quickRanges} aria-label="Quick date ranges"><Button type="button" size="small" variant={range.from === today && range.to === today ? "primary" : "secondary"} onClick={() => void loadRange(presetRange("TODAY", today))} disabled={loading}>Today</Button><Button type="button" size="small" variant="secondary" onClick={() => void loadRange(presetRange("NEXT_7", today))} disabled={loading}>Next 7 days</Button><Button type="button" size="small" variant="secondary" onClick={() => void loadRange(presetRange("PREVIOUS_7", today))} disabled={loading}>Previous 7 days</Button></div><div className={styles.dateFields}><label><span>From date</span><input type="date" value={draftRange.from} onChange={(event) => setDraftRange((current) => ({ ...current, from: event.target.value }))} /></label><label><span>To date</span><input type="date" value={draftRange.to} onChange={(event) => setDraftRange((current) => ({ ...current, to: event.target.value }))} /></label><Button type="button" size="small" loading={loading} loadingLabel="Loading…" disabled={invalidDraft} onClick={() => void loadRange(draftRange)}>Apply range</Button></div></section>
+    {error && <ErrorState title="Fulfillment counts could not be loaded" description="Try applying the date range again." requestId={error.requestId} action={<Button type="button" variant="secondary" onClick={() => void loadRange(range)}>Try again</Button>} />}
+    <section className={styles.summary} aria-label="Visible fulfillment totals"><Summary icon={<ChefHat />} value={totals.meals} label="Meals to prepare" /><Summary icon={<CalendarDays />} value={totals.services} label="Meal services" /><Summary icon={<MapPin />} value={totals.locations} label="Delivery locations" /><Summary icon={<UtensilsCrossed />} value={totals.menus} label="Menu variations" /></section>
+    <section className={styles.toolbar} aria-label="Fulfillment tools"><label className={styles.search}><Search size={16} aria-hidden="true" /><span className="sr-only">Search fulfillment</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search enterprise, location, or menu" /></label><Button type="button" variant="secondary" size="small" onClick={exportCsv} disabled={visibleRows.length === 0}><Download size={15} aria-hidden="true" />Export visible CSV</Button></section>
+    <div className={styles.viewTabs} role="tablist" aria-label="Fulfillment views"><button role="tab" aria-selected={view === "ENTERPRISE"} onClick={() => setView("ENTERPRISE")}><Warehouse size={16} aria-hidden="true" />Enterprise plan</button><button role="tab" aria-selected={view === "PROCUREMENT"} onClick={() => setView("PROCUREMENT")}><UtensilsCrossed size={16} aria-hidden="true" />Procurement</button><button role="tab" aria-selected={view === "DISPATCH"} onClick={() => setView("DISPATCH")}><Truck size={16} aria-hidden="true" />Dispatch</button></div>
+    <div className={styles.resultHeading}><div><p>{formatRange(range)}</p><h2>{view === "ENTERPRISE" ? `${enterpriseGroups.length} enterprises` : view === "PROCUREMENT" ? `${procurement.length} menu requirements` : `${dispatch.length} dispatch stops`}</h2></div><span>{totals.meals} opted-in {totals.meals === 1 ? "meal" : "meals"}{search && " after search"}</span></div>
+    {visibleRows.length === 0 ? <EmptyState icon={<ChefHat size={25} aria-hidden="true" />} title="No meal requirements found" description={search ? "No enterprise, location, or menu matches this search." : "No employees have opted in for a published service in this date range."} action={search ? <Button type="button" variant="secondary" onClick={() => setSearch("")}>Clear search</Button> : <Link className={styles.emptyLink} href="/admin/calendar">Open service planning</Link>} /> : <>{view === "ENTERPRISE" && <EnterprisePlan groups={enterpriseGroups} />}{view === "PROCUREMENT" && <ProcurementTable rows={procurement} />}{view === "DISPATCH" && <DispatchPlan groups={dispatch} />}</>}
   </AppShell>;
 }
 
-type Dispatch = { key: string; scheduleId: string; date: string; cutoff: string; enterprise: string; location: string; rows: OperationRow[]; total: number };
-function groupRows(rows: OperationRow[]) { const groups = new Map<string, Dispatch>(); for (const row of rows) { const key = `${row.schedule_id}:${row.location_name}`; const current = groups.get(key) || { key, scheduleId: row.schedule_id, date: row.schedule_date, cutoff: row.cutoff_time, enterprise: row.enterprise_name, location: row.location_name, rows: [], total: 0 }; current.rows.push(row); current.total += row.meal_count; groups.set(key, current); } return [...groups.values()].sort((a, b) => a.date.localeCompare(b.date) || a.enterprise.localeCompare(b.enterprise) || a.location.localeCompare(b.location)); }
-function DispatchGroup({ group }: { group: Dispatch }) { const locked = new Date(group.cutoff) <= new Date(); return <article className={styles.group}><header><time dateTime={group.date}><strong>{formatDate(group.date)}</strong><span><Clock3 size={13} aria-hidden="true" />Cutoff {formatTime(group.cutoff)}</span></time><StatusBadge tone={locked ? "success" : "warning"}>{locked ? "COUNT LOCKED" : "CHOICES OPEN"}</StatusBadge></header><div className={styles.destination}><span><MapPin size={17} aria-hidden="true" /></span><div><h3>{group.location}</h3><p>{group.enterprise}</p></div><strong>{group.total}<small>meals</small></strong></div><div className={styles.menuRows}>{group.rows.map((row) => <div key={`${row.option_label}:${row.menu_title}`}><b>{row.option_label}</b><span>{row.menu_title}</span><strong>{row.meal_count}</strong></div>)}</div></article>; }
+function EnterprisePlan({ groups }: { groups: ReturnType<typeof groupByEnterprise> }) { return <section className={styles.enterprisePlan} aria-label="Requirements by enterprise">{groups.map((enterprise, index) => <details className={styles.enterprise} key={enterprise.name} open={index === 0}><summary><span className={styles.chevron}><ChevronDown aria-hidden="true" /></span><span><strong>{enterprise.name}</strong><small>{enterprise.locations.length} {enterprise.locations.length === 1 ? "location" : "locations"}</small></span><CountSplit total={enterprise.total} open={enterprise.open} locked={enterprise.locked} /></summary><div className={styles.locations}>{enterprise.locations.map((location) => <section className={styles.location} key={location.name}><header><div><MapPin size={16} aria-hidden="true" /><strong>{location.name}</strong></div><b>{location.total} meals</b></header><MenuTable rows={location.rows} /></section>)}</div></details>)}</section>; }
+function ProcurementTable({ rows }: { rows: ReturnType<typeof procurementTotals> }) { return <div className={styles.tableWrap}><table className={styles.dataTable}><caption className="sr-only">Procurement quantities by menu</caption><thead><tr><th>Menu</th><th>Enterprises</th><th>Locations</th><th>Open</th><th>Locked</th><th>Total quantity</th></tr></thead><tbody>{rows.map((row) => <tr key={row.menu}><th scope="row">{row.menu}</th><td data-label="Enterprises">{row.enterprises}</td><td data-label="Locations">{row.locations}</td><td data-label="Open">{row.open}</td><td data-label="Locked">{row.locked}</td><td data-label="Total quantity"><strong>{row.total}</strong></td></tr>)}</tbody></table></div>; }
+function DispatchPlan({ groups }: { groups: ReturnType<typeof groupForDispatch> }) { return <section className={styles.dispatchGrid} aria-label="Dispatch requirements">{groups.map((group) => <article className={styles.dispatchCard} key={group.key}><header><div><time dateTime={group.date}>{formatDate(group.date)}</time><span><Clock3 size={13} aria-hidden="true" />Cutoff {formatTime(group.cutoff)}</span></div><StatusBadge tone={countState(group.cutoff) === "LOCKED" ? "success" : "warning"}>{countState(group.cutoff) === "LOCKED" ? "COUNT LOCKED" : "CHOICES OPEN"}</StatusBadge></header><div className={styles.dispatchDestination}><MapPin aria-hidden="true" /><div><strong>{group.location}</strong><span>{group.enterprise}</span></div><b>{group.total}<small>meals</small></b></div><MenuTable rows={group.rows} compact /></article>)}</section>; }
+function MenuTable({ rows, compact = false }: { rows: OperationRow[]; compact?: boolean }) { return <div className={compact ? styles.compactTable : styles.tableWrap}><table className={styles.menuTable}><caption className="sr-only">Menu quantities</caption><thead><tr><th>Date</th><th>Option</th><th>Menu</th><th>Count state</th><th>Quantity</th></tr></thead><tbody>{rows.map((row) => <tr key={`${row.schedule_id}:${row.location_name}:${row.option_label}:${row.menu_title}`}><td data-label="Date">{formatDate(row.schedule_date)}</td><td data-label="Option"><b className={styles.option}>{row.option_label}</b></td><th scope="row">{row.menu_title}</th><td data-label="Count state"><StatusBadge tone={countState(row.cutoff_time) === "LOCKED" ? "success" : "warning"}>{countState(row.cutoff_time)}</StatusBadge></td><td data-label="Quantity"><strong>{row.meal_count}</strong></td></tr>)}</tbody></table></div>; }
+function CountSplit({ total, open, locked }: { total: number; open: number; locked: number }) { return <span className={styles.countSplit}><small>{open} open · {locked} locked</small><strong>{total}<em>meals</em></strong></span>; }
 function Summary({ icon, value, label }: { icon: ReactNode; value: number; label: string }) { return <article><span>{icon}</span><div><strong>{value}</strong><small>{label}</small></div></article>; }
-function formatDate(date: string) { return new Date(`${date}T00:00:00`).toLocaleDateString("en-BD", { weekday: "short", day: "numeric", month: "short" }); }
+function formatDate(date: string) { return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-BD", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" }); }
 function formatTime(value: string) { return new Date(value).toLocaleTimeString("en-BD", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit" }); }
+function formatRange(range: FulfillmentRange) { return range.from === range.to ? formatDate(range.from) : `${formatDate(range.from)} – ${formatDate(range.to)}`; }
