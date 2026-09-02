@@ -9,7 +9,7 @@
 | :--- | :--- | :--- | :--- |
 | **Aamish Ops Admin** | Platform Super Admin (Ops / Kitchen / Logistics) | Onboard enterprises, configure delivery hubs, schedule daily menus, enforce cutoff, aggregate kitchen production counts, monitor live CSAT. | Manual headcount tallying over phone/WhatsApp, unpredictable kitchen wastage, no real-time feedback loop. |
 | **Enterprise Admin** | HR / Admin POC at Client (e.g., Live Technologies) | Manage employee rosters (single & CSV bulk upload), assign branch locations, monitor daily meal counts delivered to offices. | Managing paper rosters, tracking who is eating at which office, manual coordination with caterers. |
-| **Enterprise User** | Employee at Client Company | View today's & weekly meal options, opt-out (toggle off) if out of office before cutoff, submit ratings (1–5 CSAT), upload food photos, and write review notes. | Unpredictable lunch menus, no voice/channel to give immediate feedback on food quality or portion size. |
+| **Enterprise User** | Employee at Client Company | View historical, current, and planned meals, manage eligible future meals before cutoff, and submit 1–5 CSAT reviews with text, photos, or voice. | Unpredictable lunch menus and no durable, contextual feedback history. |
 
 ---
 
@@ -24,8 +24,8 @@ flowchart TD
 
     A --> C[Menu Management]
     C --> C1[Create Menu: Title, Description, Dual Images, Price]
-    C1 --> C2[Publish Menu: Select Dates + Target Enterprise]
-    C2 --> C3[Configure Logistics Cutoff Time e.g. 10:00 AM]
+    C1 --> C2[Configure Platform Cutoff on Dashboard]
+    C2 --> C3[Publish Menu: Select Dates + Target Enterprise]
 
     A --> D[Kitchen & Ops Dispatch Dashboard]
     D --> D1[View Real-time Aggregation Matrix: Location x Menu x Count]
@@ -66,8 +66,9 @@ flowchart TD
 4. Navigates to **Publish Schedule**:
    * Selects target Date range (e.g., `Mon Aug 31 – Fri Sep 04`).
    * Assigns Menu packages to dates.
-   * Sets **Order Cutoff Time** (e.g., `10:00 AM daily` or `05:00 PM previous day`).
+   * The system derives the cutoff from the platform setting; no daily cutoff input is shown.
    * Clicks **"Publish Schedule"**.
+5. To change the platform cutoff, the Super Admin updates the dashboard setting. The system immediately recalculates all services dated today or later, including previously locked services, and preserves earlier historical timestamps.
 
 #### Step 3: Kitchen Dispatch & Aggregation
 1. On operational day (post-cutoff time):
@@ -133,7 +134,7 @@ flowchart TD
 flowchart TD
     A[Employee Login via ID / Email] --> B[Daily Meal Dashboard]
     B --> B1[View Today's Published Menu & Pictures]
-    B --> B2[View Weekly Schedule]
+    B --> B2[View Historical, Current, and Planned Calendar]
 
     B --> C{Before Cutoff Time?}
     C -- Yes --> D[Toggle Meal Status: ON / OFF]
@@ -141,15 +142,13 @@ flowchart TD
     D --> D2[Toggle ON: Receive Meal]
     C -- No (Cutoff Passed) --> E[Meal Locked: Preparation in Progress]
 
-    B --> F[Submit Daily Food Review]
-    F --> F1[Select Review Date: Today or Backdated within Week]
+    B --> F[Submit Meal Review]
+    F --> F1[Select Any Previous Received Meal]
     F1 --> F2[Give CSAT Rating: 1 to 5 Stars]
     F2 --> F3[Upload 1-5 Food Photos: Plating, Portion, Defects]
-    F3 --> F4[Write Feedback / Comments]
-    F4 --> F5[Submit / Update Review]
-
-    B --> G[Personal / Home Delivery Tab]
-    G --> G1[Displays 'Coming Soon' D2C Teaser]
+    F3 --> F4[Add Text and Optional Voice up to 1 Minute]
+    F4 --> F5[Submit; Edit for 24 Hours]
+    F5 --> F6[Read Only After Edit Window]
 ```
 
 ### 4.1 Step-by-Step Flow
@@ -160,7 +159,8 @@ flowchart TD
 3. Dashboard prominently renders:
    * Today's Date & Meal Banner (e.g., `Special Chicken Khichuri & Sonali Roast`).
    * High-quality compressed food photo & detailed ingredient list.
-   * Live Cutoff Countdown Timer (e.g., `Locks in 01h 42m`).
+   * The platform-wide cutoff and whether the current service is open or locked.
+   * A calendar containing historical meal/review state, today, and planned meals.
 
 #### Step 2: Meal Preference & Opt-Out (Toggle Off)
 * **Default State**: Employee is set to `Opt-In (Meal ON)`.
@@ -169,19 +169,15 @@ flowchart TD
   * Status updates immediately to: `Meal Skipped for Today`.
   * Reasons: Remote work, leave, fasting, or personal lunch plans.
 * **Cutoff Locking Rule**:
-  * When cutoff time arrives (e.g., 10:00 AM), the switch disables and displays: `Locked for kitchen preparation`.
+  * When the platform cutoff arrives, the switch disables and displays: `Locked for kitchen preparation`.
 
-#### Step 3: Daily Quality Feedback & Photo Upload
-1. After lunch, employee clicks **"Review Today's Meal"** (or selects a past date from the week if back-reviewing).
+#### Step 3: Meal History, Quality Feedback, and Voice
+1. Employee selects any previous meal they received; review submission does not expire.
 2. **Rating**: Selects 1 to 5 stars (CSAT scale).
 3. **Photo Evidence**: Uploads 1 to 5 photos directly from mobile camera/gallery (e.g., plating quality, portion size, or defect like undercooked vegetable).
-4. **Feedback Note**: Writes optional or required comments (e.g., *"Rice was flavorful, but chicken was slightly salty."*).
-5. **Submit**: Review is recorded in real time. Employee can re-open and edit the review if needed.
-6. **Gamification Feedback**: Notification displays progress: *"Review 4/22 completed. Keep it up!"*
-
-#### Step 4: D2C (Direct to Consumer) Exploration
-1. Employee clicks on the **"Order for Home / Personal"** tab.
-2. System displays a clean banner: *"Coming Soon – Enjoy Aamish catering delivered directly to your home."*
+4. **Feedback Note / Voice**: Writes an optional comment and may attach one voice recording of at most one minute.
+5. **Submit**: Review is recorded in real time. The employee can update its rating, text, photos, or voice for exactly 24 hours from initial submission.
+6. **Lock**: Re-submission never extends the original deadline. After 24 hours the employee can read the review but cannot edit or delete it.
 
 ---
 
@@ -190,14 +186,17 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> Scheduled: Menu Published by Super Admin
-    Scheduled --> Active_Editable: Target Date Begins (Toggles Enabled)
-    Active_Editable --> Locked_Cutoff: Cutoff Time Reached (e.g. 10:00 AM)
+    Scheduled --> Active_Editable: Before Platform Cutoff
+    Active_Editable --> Locked_Cutoff: Platform Cutoff Reached
+    Locked_Cutoff --> Active_Editable: Admin Moves Platform Cutoff Later
     Active_Editable --> Opted_Out: Employee Toggles OFF
     Opted_Out --> Active_Editable: Employee Toggles ON (Before Cutoff)
     Opted_Out --> Locked_Cutoff: Cutoff Time Reached (No Meal Dispatched)
     Locked_Cutoff --> In_Delivery: Kitchen Packs & Dispatches
     In_Delivery --> Delivered: Received at Office Location
-    Delivered --> Review_Open: Food Review Window Active (7 Days)
-    Review_Open --> Reviewed: Employee Submits 1-5 Star + Photos
-    Reviewed --> Review_Updated: Employee Edits Review
+    Delivered --> Review_Open: Review Submission Has No Expiry
+    Review_Open --> Reviewed_Editable: Employee Submits Rating + Text/Photos/Voice
+    Reviewed_Editable --> Review_Updated: Employee Edits Within 24 Hours
+    Reviewed_Editable --> Review_Read_Only: 24 Hours After Initial Submission
+    Review_Updated --> Review_Read_Only: Original 24-Hour Deadline Reached
 ```

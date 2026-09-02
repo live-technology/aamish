@@ -7,6 +7,7 @@
 
 ```mermaid
 erDiagram
+    PLATFORM_SETTING ||--o{ MENU_SCHEDULE : "derives cutoff for"
     ENTERPRISE ||--o{ DELIVERY_LOCATION : "has multiple"
     ENTERPRISE ||--o{ ENTERPRISE_ADMIN : "managed by"
     ENTERPRISE ||--o{ EMPLOYEE : "employs"
@@ -21,11 +22,23 @@ erDiagram
     MENU_SCHEDULE ||--o{ MEAL_REVIEW : "reviewed in"
     EMPLOYEE ||--o{ MEAL_REVIEW : "writes"
     MEAL_REVIEW ||--o{ REVIEW_PHOTO : "contains"
+    MEAL_REVIEW ||--o| REVIEW_VOICE : "contains"
 ```
 
 ---
 
 ## 2. Table Specifications & Schema Definitions
+
+### 2.0 `platform_settings`
+Stores singleton Aamish-wide operational settings. Beta 0.3 introduces the `MEAL_CUTOFF` row with a default local value of `00:05` and timezone `Asia/Dhaka`. Updating it recalculates `menu_schedules.cutoff_time` for every service whose `schedule_date` is the current Dhaka date or later; older rows remain historical snapshots.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `key` | `VARCHAR(100)` | `PRIMARY KEY` | Stable setting key, initially `MEAL_CUTOFF` |
+| `value` | `JSONB` | `NOT NULL` | Validated value such as `{ "local_time": "00:05", "timezone": "Asia/Dhaka" }` |
+| `updated_by_user_id` | `UUID` | `REFERENCES app_users(id)` | Last authorized Super Admin actor |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Creation timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Last update timestamp |
 
 ### 2.1 `enterprises`
 Stores company/client profiles onboarding onto the Aamish platform.
@@ -171,6 +184,8 @@ Quality and CSAT feedback submitted by employees.
 
 *Composite Unique Constraint*: `UNIQUE (schedule_id, employee_id)`
 
+Review submission is allowed for any previous opted-in/received schedule. Employee updates are authorized only while `NOW() < created_at + INTERVAL '24 hours'`. Updating a review never changes `created_at`; after the deadline the record remains readable but employee-immutable.
+
 ---
 
 ### 2.9 `review_photos`
@@ -184,6 +199,23 @@ Uploaded evidence / photos of the meals and food quality.
 | `thumbnail_url` | `TEXT` | `NULLABLE` | Fast loading thumbnail URL |
 | `caption` | `VARCHAR(255)` | `NULLABLE` | Optional caption (e.g. "Undercooked vegetable") |
 | `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Upload timestamp |
+
+At most five active photo rows may belong to one review.
+
+### 2.10 `review_voice`
+Stores the optional voice recording associated with a meal review.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY, DEFAULT gen_random_uuid()` | Unique audio record ID |
+| `review_id` | `UUID` | `UNIQUE, NOT NULL, REFERENCES meal_reviews(id) ON DELETE CASCADE` | Parent review; enforces at most one voice recording |
+| `cloudinary_public_id` | `TEXT` | `NOT NULL` | Trusted media-provider identifier |
+| `audio_url` | `TEXT` | `NOT NULL` | Authorized playback URL |
+| `duration_seconds` | `SMALLINT` | `NOT NULL, CHECK (duration_seconds BETWEEN 1 AND 60)` | Recording duration |
+| `created_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Initial upload timestamp |
+| `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Replacement timestamp within the edit window |
+
+Review media is returned only through role- and tenant-authorized queries. Employee replacement is allowed only within the parent review's original 24-hour edit window.
 
 ---
 
