@@ -15,7 +15,7 @@ export async function employeePageData() {
     db()<EmployeeSchedule[]>`
       SELECT ms.id,ms.schedule_date::text,ms.cutoff_time::text,ms.status,
         COALESCE(mp.is_opted_in,FALSE) AS is_opted_in,mp.selected_option_id,dl.name AS location_name,
-        (mp.id IS NOT NULL AND mp.is_opted_in=TRUE AND ms.schedule_date < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date) AS can_review,
+        (mp.id IS NOT NULL AND mp.is_opted_in=TRUE AND ms.status<>'CANCELLED' AND ms.schedule_date < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Dhaka')::date) AS can_review,
         mr.id AS review_id,mr.rating AS review_rating,mr.comment AS review_comment,mr.created_at::text AS review_created_at,
         mr.updated_at::text AS review_updated_at,mr.voice_public_id AS review_voice_public_id,mr.voice_url AS review_voice_url,
         mr.voice_duration_seconds AS review_voice_duration_seconds,

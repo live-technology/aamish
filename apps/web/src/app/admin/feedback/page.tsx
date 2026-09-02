@@ -17,6 +17,7 @@ export default async function FeedbackPage() {
       COALESCE(au.username,'unknown') AS username,e.name AS enterprise_name
     FROM platform_feedback pf LEFT JOIN app_users au ON au.id=pf.submitted_by_user_id
     LEFT JOIN enterprises e ON e.id=pf.enterprise_id
+    WHERE pf.meal_schedule_id IS NULL
     ORDER BY pf.created_at DESC LIMIT 100
   `;
   return <FeedbackInbox fullName={session.fullName} feedback={[...feedback]} />;
