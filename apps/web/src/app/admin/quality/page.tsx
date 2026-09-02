@@ -11,7 +11,7 @@ export default async function QualityPage() {
   const [reviews, issues] = await Promise.all([
     db()<ReviewRow[]>`
       SELECT mr.id,mr.rating,mr.comment,ep.full_name,e.name AS enterprise_name,
-        COALESCE(m.title,'Scheduled meal') AS menu_title,mr.created_at::text,
+        COALESCE(m.title,'Scheduled meal') AS menu_title,mr.created_at::text,mr.voice_url,mr.voice_duration_seconds,
         ms.schedule_date::text,COUNT(rp.id)::int AS photo_count
       FROM meal_reviews mr JOIN menu_schedules ms ON ms.id=mr.schedule_id
       JOIN employees ep ON ep.id=mr.employee_id JOIN enterprises e ON e.id=ep.enterprise_id
