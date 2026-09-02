@@ -20,10 +20,11 @@ export async function kitchenMatrix(enterpriseId: string, mealDate: string) {
 export async function updatePreference(input: { scheduleId: string; employeeId: string; optedIn: boolean; selectedOptionId?: string }) {
   const sql = db();
   return sql.begin(async (transaction) => {
-    const schedules = await transaction<{ cutoff_time: string }[]>`
-      SELECT cutoff_time FROM menu_schedules WHERE id = ${input.scheduleId} FOR UPDATE
+    const schedules = await transaction<{ cutoff_time: string; status: string }[]>`
+      SELECT cutoff_time, status FROM menu_schedules WHERE id = ${input.scheduleId} FOR UPDATE
     `;
     if (!schedules[0]) throw new Error("Schedule not found");
+    if (schedules[0].status === "CANCELLED") throw new Error("SCHEDULE_CANCELLED");
     if (new Date(schedules[0].cutoff_time) <= new Date()) throw new Error("CUTOFF_TIME_EXPIRED");
 
     if (input.selectedOptionId) {
