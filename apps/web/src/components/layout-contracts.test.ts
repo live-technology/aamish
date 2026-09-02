@@ -36,4 +36,15 @@ describe("responsive layout contracts", () => {
     expect(signOut).toContain("Sign out");
     expect(signOut).toContain('aria-label="Sign out"');
   });
+
+  test("contains mobile navigation without clipping destinations", async () => {
+    const ui = await readStylesheet("./ui/ui.module.css");
+    const mobileNavigation = await readStylesheet("./ui/mobile-navigation.tsx");
+
+    expect(ui).toContain(".mobileNav{position:fixed;right:0;bottom:0;left:0;z-index:70;display:flex;overflow:hidden");
+    expect(ui).toContain(".mobileNavLink{min-width:0;flex:1 1 0");
+    expect(ui).toContain("min-height:64px");
+    expect(mobileNavigation).toContain('aria-current={currentPath === href ? "page" : undefined}');
+    expect(mobileNavigation).toContain('aria-label="Close more destinations"');
+  });
 });

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { MobileNavigation } from "./mobile-navigation";
 import { SignOutButton } from "./sign-out-button";
 import { uiStyles as styles } from "./primitives";
 
@@ -9,6 +10,7 @@ export type ShellNavigationItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  mobilePrimary?: boolean;
 };
 
 type AppShellProps = {
@@ -79,19 +81,11 @@ export function AppShell({
         <div className={styles.contentInner}>{children}</div>
       </main>
 
-      <nav className={styles.mobileNav} aria-label={`${workspace} mobile navigation`}>
-        {navigation.map(({ href, label, icon: Icon }) => (
-          <Link
-            className={`${styles.mobileNavLink} ${currentPath === href ? styles.mobileNavActive : ""}`}
-            href={href}
-            aria-current={currentPath === href ? "page" : undefined}
-            key={href}
-          >
-            <Icon size={19} aria-hidden="true" />
-            <span>{label}</span>
-          </Link>
-        ))}
-      </nav>
+      <MobileNavigation
+        workspace={workspace}
+        currentPath={currentPath}
+        navigation={navigation.map(({ icon: Icon, ...item }) => ({ ...item, icon: <Icon size={20} aria-hidden="true" /> }))}
+      />
     </div>
   );
 }
