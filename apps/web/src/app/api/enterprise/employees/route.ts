@@ -3,11 +3,27 @@ import { currentSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { log, logError } from "@/lib/logger";
 
-export async function GET() {
+const PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 200;
+
+export async function GET(request: NextRequest) {
   const requestId = crypto.randomUUID(); const session = await currentSession();
   if (session?.role !== "ENTERPRISE_ADMIN" || !session.enterpriseId) return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
-  const employees = await db()`SELECT ep.id, ep.employee_code, ep.full_name, ep.email, ep.phone, ep.is_active, ep.location_id, dl.name AS location_name, au.username FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id WHERE ep.enterprise_id=${session.enterpriseId} ORDER BY ep.created_at DESC`;
-  return NextResponse.json({ employees, requestId });
+  const params = request.nextUrl.searchParams;
+  const search = params.get("search")?.trim() || "";
+  const location = params.get("location") || "";
+  const offset = Math.max(0, Number(params.get("offset")) || 0);
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(params.get("limit")) || PAGE_SIZE));
+  const employees = await db()`
+    SELECT ep.id, ep.employee_code, ep.full_name, ep.email, ep.phone, ep.is_active, ep.location_id, dl.name AS location_name, au.username
+    FROM employees ep JOIN delivery_locations dl ON dl.id=ep.location_id LEFT JOIN app_users au ON au.employee_id=ep.id
+    WHERE ep.enterprise_id=${session.enterpriseId}
+      AND (${search}='' OR ep.full_name ILIKE ${`%${search}%`} OR ep.employee_code ILIKE ${`%${search}%`} OR ep.email ILIKE ${`%${search}%`} OR au.username ILIKE ${`%${search}%`})
+      AND (${location}='' OR dl.name=${location})
+    ORDER BY ep.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  return NextResponse.json({ employees, requestId, hasMore: employees.length === limit });
 }
 
 export async function POST(request: NextRequest) {
