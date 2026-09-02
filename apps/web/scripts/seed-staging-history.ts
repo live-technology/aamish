@@ -50,6 +50,15 @@ export function historicalDates(today: string, days = 45) {
   });
 }
 
+export function upcomingDates(today: string, days = 7) {
+  const anchor = new Date(`${today}T00:00:00Z`);
+  return Array.from({ length: days }, (_, index) => {
+    const value = new Date(anchor);
+    value.setUTCDate(value.getUTCDate() + index + 1);
+    return value.toISOString().slice(0, 10);
+  });
+}
+
 export function officeMenuForDate(date: string) {
   const day = new Date(`${date}T00:00:00Z`).getUTCDay();
   return OFFICE_MENUS.find((menu) => menu.day === day)!;
@@ -74,7 +83,7 @@ async function insertMany(sql: Sql | postgres.TransactionSql, table: string, row
 
 async function resetAndSeed(sql: Sql, password: string) {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
-  const dates = historicalDates(today);
+  const dates = [...historicalDates(today), ...upcomingDates(today)];
   const summary = { enterprises: 0, locations: 0, employees: 0, menus: 0, schedules: 0, preferences: 0, reviews: 0 };
 
   await sql.begin(async (tx) => {
@@ -115,23 +124,26 @@ async function resetAndSeed(sql: Sql, password: string) {
 
       for (let dayIndex = 0; dayIndex < dates.length; dayIndex++) {
         const date = dates[dayIndex];
+        const completed = date < today;
+        const createdDate = completed ? date : today;
         const menu = officeMenuForDate(date);
-        const [schedule] = await tx<IdRow[]>`INSERT INTO menu_schedules(enterprise_id,menu_id,schedule_date,meal_type,cutoff_time,status,created_at) VALUES(${enterprise.id},${officeMenuIds.get(menu.day)!},${date},'LUNCH',${`${date}T04:30:00.000Z`},'PUBLISHED',${`${date}T02:00:00.000Z`}) RETURNING id`;
-        const [primary] = await tx<IdRow[]>`INSERT INTO menu_schedule_options(schedule_id,menu_id,option_label,created_at) VALUES(${schedule.id},${officeMenuIds.get(menu.day)!},'A',${`${date}T02:00:00.000Z`}) RETURNING id`;
+        const [schedule] = await tx<IdRow[]>`INSERT INTO menu_schedules(enterprise_id,menu_id,schedule_date,meal_type,cutoff_time,status,created_at) VALUES(${enterprise.id},${officeMenuIds.get(menu.day)!},${date},'LUNCH',${`${date}T04:30:00.000Z`},'PUBLISHED',${`${createdDate}T02:00:00.000Z`}) RETURNING id`;
+        const [primary] = await tx<IdRow[]>`INSERT INTO menu_schedule_options(schedule_id,menu_id,option_label,created_at) VALUES(${schedule.id},${officeMenuIds.get(menu.day)!},'A',${`${createdDate}T02:00:00.000Z`}) RETURNING id`;
         let alternate: IdRow | undefined;
-        if (menu.alternate) [alternate] = await tx<IdRow[]>`INSERT INTO menu_schedule_options(schedule_id,menu_id,option_label,created_at) VALUES(${schedule.id},${chicken.id},'B',${`${date}T02:00:00.000Z`}) RETURNING id`;
+        if (menu.alternate) [alternate] = await tx<IdRow[]>`INSERT INTO menu_schedule_options(schedule_id,menu_id,option_label,created_at) VALUES(${schedule.id},${chicken.id},'B',${`${createdDate}T02:00:00.000Z`}) RETURNING id`;
         summary.schedules++;
 
         const preferences = employeeRows.map((employee) => {
           const seed = organizationIndex * 1000000 + dayIndex * 10000 + employee.index;
           const optedIn = random(seed) < 0.92;
           const selectAlternate = Boolean(alternate) && random(seed + 91) < 0.18;
-          return { schedule_id: schedule.id, employee_id: employee.id, location_id: employee.location_id, is_opted_in: optedIn, updated_by: "EMPLOYEE", selected_option_id: selectAlternate ? alternate!.id : primary.id, last_toggled_at: `${date}T03:45:00.000Z` };
+          return { schedule_id: schedule.id, employee_id: employee.id, location_id: employee.location_id, is_opted_in: optedIn, updated_by: "EMPLOYEE", selected_option_id: selectAlternate ? alternate!.id : primary.id, last_toggled_at: `${createdDate}T03:45:00.000Z` };
         });
         await insertMany(tx, "meal_preferences", preferences, ["schedule_id", "employee_id", "location_id", "is_opted_in", "updated_by", "selected_option_id", "last_toggled_at"]);
         summary.preferences += preferences.length;
 
         const reviews = employeeRows.flatMap((employee, index) => {
+          if (!completed) return [];
           if (!preferences[index].is_opted_in) return [];
           const seed = organizationIndex * 2000000 + dayIndex * 20000 + employee.index;
           if (random(seed + 301) >= 0.34) return [];
@@ -159,7 +171,7 @@ async function main() {
   if (!connectionString) throw new Error("STAGING_DATABASE_URL is required; DATABASE_URL is intentionally ignored.");
   const hostname = new URL(connectionString).hostname;
   if (hostname !== options.expectedHost) throw new Error(`Refusing reset: connected host does not match --expected-host (${options.expectedHost}).`);
-  if (!options.execute) { console.log(`Dry run: would reset ${hostname} and seed 4 organizations, 1230 employees, and 45 historical days.`); return; }
+  if (!options.execute) { console.log(`Dry run: would reset ${hostname} and seed 4 organizations, 1230 employees, 45 historical days, and 7 upcoming days.`); return; }
   const password = process.env.STAGING_SEED_PASSWORD || `${randomBytes(14).toString("base64url")}Aa1!`;
   const sql = postgres(connectionString, { max: 1, connect_timeout: 15, idle_timeout: 30 });
   try {

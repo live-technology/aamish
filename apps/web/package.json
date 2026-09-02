@@ -11,7 +11,8 @@
     "bootstrap:admin": "bun scripts/bootstrap-admin.ts",
     "feedback:transcribe": "bun scripts/transcribe-feedback.ts",
     "data:reset": "bun scripts/reset-beta-data.ts",
-    "staging:seed": "bun scripts/seed-staging-history.ts"
+    "staging:seed": "bun scripts/seed-staging-history.ts",
+    "staging:seed-upcoming": "bun scripts/seed-upcoming-meals.ts"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",
