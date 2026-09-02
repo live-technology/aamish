@@ -36,8 +36,12 @@ const messages: Record<string, string> = {
   REVIEW_EDIT_WINDOW_CLOSED: "This review is read-only because its 24-hour edit window has ended.",
   REVIEW_NOT_AVAILABLE: "This meal is not available for review. Choose a previous meal you received.",
   SCHEDULE_ALREADY_EXISTS: "This enterprise already has a lunch menu for that date.",
+  SCHEDULE_CANCELLED: "This service was cancelled, so it can no longer be changed.",
+  SCHEDULE_CANCEL_FAILED: "The service could not be cancelled. Try again or share the request ID with support.",
   SCHEDULE_LIST_FAILED: "The service calendar could not be loaded. Try again or share the request ID with support.",
+  SCHEDULE_NOT_FOUND: "That service no longer exists.",
   SCHEDULE_PUBLISH_FAILED: "The menu could not be published. It may already exist for that date.",
+  SCHEDULE_UPDATE_FAILED: "The service could not be updated. Try again or share the request ID with support.",
   UPLOAD_FAILED: "The image upload failed. Try a smaller image or try again.",
 };
 

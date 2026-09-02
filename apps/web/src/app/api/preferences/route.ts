@@ -18,7 +18,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
     logError("meal.preference.update_failed", error, { requestId });
-    const status = message === "CUTOFF_TIME_EXPIRED" ? 403 : message === "Schedule not found" || message === "Meal preference not found" ? 404 : 500;
+    const status = message === "CUTOFF_TIME_EXPIRED" || message === "SCHEDULE_CANCELLED" ? 403 : message === "Schedule not found" || message === "Meal preference not found" ? 404 : 500;
     return NextResponse.json({ error: message, requestId }, { status });
   }
 }
