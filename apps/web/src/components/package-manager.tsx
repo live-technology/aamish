@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { ImagePlus, PackageOpen, Pencil, Plus, Search, UploadCloud, X } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Alert, Button, EmptyState, IconButton, PageHeader, SelectField, StatusBadge, TextAreaField, TextField } from "@/components/ui/primitives";
+import { ResilientImage } from "@/components/ui/resilient-image";
 import { clientErrorMessage, validateImage } from "@/lib/client-errors";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
 import { useModalDialog } from "@/lib/use-modal-dialog";
@@ -173,12 +173,12 @@ export function PackageManager({ fullName, initialMenus }: { fullName: string; i
 }
 
 export function MenuCard({ menu, edit }: { menu: MenuPackage; edit: () => void }) {
-  return <article className={styles.card}><div className={styles.visual}>{menu.image_mobile_url ? <Image src={menu.image_mobile_url} alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /> : <PackageOpen size={28} aria-hidden="true" />}</div><div className={styles.cardBody}><div className={styles.cardMeta}><span>{menu.category.replaceAll("_", " ")}</span><StatusBadge tone={menu.status === "ACTIVE" ? "success" : "neutral"}>{menu.status}</StatusBadge></div><h2>{menu.title}</h2><p>{menu.description}</p><footer><strong>৳{menu.price.toFixed(2)}</strong><Button type="button" variant="secondary" size="small" onClick={edit} aria-label={`Edit ${menu.title}`}><Pencil size={14} aria-hidden="true" />Edit</Button></footer></div></article>;
+  return <article className={styles.card}><div className={styles.visual}><ResilientImage src={menu.image_mobile_url} surface="admin-menu" fallbackLabel="Meal image unavailable" alt="" fill sizes="(max-width: 640px) 100vw, 33vw" /></div><div className={styles.cardBody}><div className={styles.cardMeta}><span>{menu.category.replaceAll("_", " ")}</span><StatusBadge tone={menu.status === "ACTIVE" ? "success" : "neutral"}>{menu.status}</StatusBadge></div><h2>{menu.title}</h2><p>{menu.description}</p><footer><strong>৳{menu.price.toFixed(2)}</strong><Button type="button" variant="secondary" size="small" onClick={edit} aria-label={`Edit ${menu.title}`}><Pencil size={14} aria-hidden="true" />Edit</Button></footer></div></article>;
 }
 
 export function MenuImageField({ editing, previewUrl, imageFile, chooseImage }: { editing: MenuPackage | null; previewUrl: string; imageFile: File | null; chooseImage: (file: File | null) => void }) {
   const imageUrl = previewUrl || editing?.image_mobile_url || "";
-  return <section className={styles.imageField}><div><span className={styles.imageLabel}>Menu image{!editing && <b aria-hidden="true"> *</b>}</span><p>{editing ? "Choose a file only when replacing the current image." : "JPG, PNG, or WebP · maximum 8 MB."}</p></div><div className={styles.imageControl}><div className={styles.imagePreview}>{imageUrl ? <Image src={imageUrl} alt={imageFile ? "New menu image preview" : `${editing?.title || "Menu"} current image`} fill unoptimized={imageUrl.startsWith("blob:")} sizes="220px" /> : <ImagePlus size={25} aria-hidden="true" />}</div><label><UploadCloud size={17} aria-hidden="true" /><span>{imageFile ? imageFile.name : editing ? "Replace image" : "Choose image"}</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp" required={!editing} onChange={(event) => chooseImage(event.target.files?.[0] || null)} /></label></div></section>;
+  return <section className={styles.imageField}><div><span className={styles.imageLabel}>Menu image{!editing && <b aria-hidden="true"> *</b>}</span><p>{editing ? "Choose a file only when replacing the current image." : "JPG, PNG, or WebP · maximum 8 MB."}</p></div><div className={styles.imageControl}><div className={styles.imagePreview}>{imageUrl ? <ResilientImage src={imageUrl} surface="admin-menu-preview" fallbackLabel="Current menu image unavailable" alt={imageFile ? "New menu image preview" : `${editing?.title || "Menu"} current image`} fill unoptimized={imageUrl.startsWith("blob:")} sizes="220px" /> : <ImagePlus size={25} aria-hidden="true" />}</div><label><UploadCloud size={17} aria-hidden="true" /><span>{imageFile ? imageFile.name : editing ? "Replace image" : "Choose image"}</span><input name="image" type="file" accept="image/png,image/jpeg,image/webp" required={!editing} onChange={(event) => chooseImage(event.target.files?.[0] || null)} /></label></div></section>;
 }
 
 function Summary({ value, label }: { value: number; label: string }) { return <article><strong>{value}</strong><span>{label}</span></article>; }

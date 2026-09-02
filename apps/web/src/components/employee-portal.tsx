@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
-import { CalendarDays, Clock3, ImageIcon, MapPin, Star } from "lucide-react";
+import { CalendarDays, Clock3, MapPin, Star } from "lucide-react";
 import { useState } from "react";
 import { EmployeeReviewWorkspace } from "@/components/employee-review-workspace";
 import { AppShell } from "@/components/ui/app-shell";
 import { Alert, Button, Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
+import { ResilientImage } from "@/components/ui/resilient-image";
 import { clientErrorMessage } from "@/lib/client-errors";
 import { employeeNavigation } from "@/lib/employee-navigation";
 import type { ReviewPhoto } from "@/lib/reviews";
@@ -61,6 +61,6 @@ export function MealCalendar({ schedules, today, updatePreference }: { schedules
   })}</section>}</>;
 }
 
-function OptionImage({ option }: { option: Option }) { return <span className={styles.optionImage}>{option.image_url ? <Image src={option.image_url} alt="" fill sizes="(max-width: 600px) 90vw, 260px"/> : <ImageIcon size={24}/>}</span>; }
+function OptionImage({ option }: { option: Option }) { return <span className={styles.optionImage}><ResilientImage src={option.image_url} surface="employee-meal" fallbackLabel="Meal image unavailable" alt="" fill sizes="(max-width: 600px) 90vw, 260px"/></span>; }
 function formatDate(value: string) { return new Date(`${value}T00:00:00`).toLocaleDateString("en-BD", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
 function formatCutoff(value: string) { return new Date(value).toLocaleTimeString("en-BD", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit" }); }
