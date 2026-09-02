@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Pencil, Plus, Trash2, Users, X } from "lucide-react";
 import { type FormEvent, useMemo, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Alert, Button, EmptyState, IconButton, PageHeader, SelectField, StatusBadge, TextField } from "@/components/ui/primitives";
@@ -18,6 +18,19 @@ type Draft = { enterpriseId: string; scheduleDate: string; menuIds: string[] };
 type Failure = { message: string; requestId?: string };
 
 const emptyDraft = (): Draft => ({ enterpriseId: "", scheduleDate: "", menuIds: [""] });
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function toYmd(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
+
+function monthGrid(year: number, month: number) {
+  const startOffset = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: { date: string; inMonth: boolean }[] = [];
+  for (let day = 1 - startOffset; cells.length < startOffset; day++) cells.push({ date: toYmd(new Date(year, month, day)), inMonth: false });
+  for (let day = 1; day <= daysInMonth; day++) cells.push({ date: toYmd(new Date(year, month, day)), inMonth: true });
+  while (cells.length % 7 !== 0 || cells.length < 35) cells.push({ date: toYmd(new Date(year, month, daysInMonth + 1 + (cells.length - startOffset - daysInMonth))), inMonth: false });
+  return cells;
+}
 
 export function scheduleStepError(step: number, draft: Draft) {
   if (step === 1 && (!draft.enterpriseId || !draft.scheduleDate)) return "Complete the organization and service date.";
@@ -34,19 +47,29 @@ export function MenuCalendar({ fullName, enterprises, menus, initialSchedules, p
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [notice, setNotice] = useState("");
-  const [scope, setScope] = useState<"UPCOMING" | "PAST">("UPCOMING");
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [listFailure, setListFailure] = useState<Failure | null>(null);
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
+  const [todayYear, todayMonth] = today.split("-").map(Number);
+  const [monthCursor, setMonthCursor] = useState({ year: todayYear, month: todayMonth - 1 });
+  const [selectedDate, setSelectedDate] = useState(today);
   const ready = enterprises.length > 0 && menus.length > 0;
   const selectedEnterprise = enterprises.find((enterprise) => enterprise.id === draft.enterpriseId);
   const selectedMenus = draft.menuIds.map((id) => menus.find((menu) => menu.id === id)).filter(Boolean) as MenuPackage[];
   const upcoming = useMemo(() => schedules.filter((schedule) => schedule.schedule_date >= today), [schedules, today]);
   const past = useMemo(() => schedules.filter((schedule) => schedule.schedule_date < today), [schedules, today]);
-  const visibleSchedules = scope === "UPCOMING" ? upcoming : past;
+  const schedulesByDate = useMemo(() => {
+    const map = new Map<string, Schedule[]>();
+    for (const schedule of schedules) map.set(schedule.schedule_date, [...(map.get(schedule.schedule_date) || []), schedule]);
+    return map;
+  }, [schedules]);
+  const grid = useMemo(() => monthGrid(monthCursor.year, monthCursor.month), [monthCursor]);
+  const selectedSchedules = schedulesByDate.get(selectedDate) || [];
   const dialogRef = useModalDialog<HTMLElement>(open, close, saving);
 
+  function shiftMonth(delta: number) { setMonthCursor((current) => { const next = new Date(current.year, current.month + delta, 1); return { year: next.getFullYear(), month: next.getMonth() }; }); }
+  function goToToday() { setMonthCursor({ year: todayYear, month: todayMonth - 1 }); setSelectedDate(today); }
   function startPublish() { setDraft(emptyDraft()); setStep(1); setFailure(null); setNotice(""); setOpen(true); }
   function close() { if (!saving) setOpen(false); }
   function next() { const message = scheduleStepError(step, draft); if (message) return setFailure({ message }); setFailure(null); setStep((current) => Math.min(3, current + 1)); }
@@ -87,7 +110,8 @@ export function MenuCalendar({ fullName, enterprises, menus, initialSchedules, p
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw { code: data.error || "SCHEDULE_PUBLISH_FAILED", requestId: data.requestId };
       await reload();
-      setOpen(false); setScope("UPCOMING");
+      setOpen(false);
+      if (draft.scheduleDate) { setSelectedDate(draft.scheduleDate); const [year, month] = draft.scheduleDate.split("-").map(Number); setMonthCursor({ year, month: month - 1 }); }
       setNotice(`${selectedEnterprise?.name || "The organization"} is scheduled for ${formatDate(draft.scheduleDate)}.`);
     } catch (caught) {
       const error = caught as { code?: string; requestId?: string };
@@ -102,8 +126,28 @@ export function MenuCalendar({ fullName, enterprises, menus, initialSchedules, p
     <section className={styles.summary} aria-label="Service calendar totals"><Summary value={upcoming.length} label="Upcoming services" icon={<CalendarDays />} /><Summary value={schedules.filter((item) => item.schedule_date === today).length} label="Serving today" icon={<Clock3 />} /><Summary value={past.length} label="Past services" icon={<Check />} /></section>
 
     {!ready ? <PrerequisiteState enterprises={enterprises} /> : schedules.length === 0 ? <EmptyState icon={<CalendarDays size={25} aria-hidden="true" />} title="No service scheduled" description="Publish the first meal service after choosing an organization, service date, and at least one active menu. The platform cutoff is applied automatically." action={<Button onClick={startPublish}><Plus size={17} aria-hidden="true" />Schedule first service</Button>} /> : <>
-      <div className={styles.tabs} role="group" aria-label="Service period"><button type="button" className={scope === "UPCOMING" ? styles.activeTab : ""} onClick={() => setScope("UPCOMING")}>Upcoming <span>{upcoming.length}</span></button><button type="button" className={scope === "PAST" ? styles.activeTab : ""} onClick={() => setScope("PAST")}>Past <span>{past.length}</span></button></div>
-      {visibleSchedules.length === 0 ? <EmptyState title={scope === "UPCOMING" ? "No upcoming service" : "No past service"} description={scope === "UPCOMING" ? "Schedule the next service when its menus and organization are ready." : "Completed meal services will appear here."} /> : <section className={styles.timeline} aria-label={`${scope.toLowerCase()} services`}>{visibleSchedules.map((schedule) => <ScheduleCard schedule={schedule} today={today} onEdit={() => setEditingSchedule(schedule)} onCancel={() => cancelSchedule(schedule)} cancelling={cancellingId === schedule.id} key={schedule.id} />)}</section>}
+      <div className={styles.monthNav}>
+        <div className={styles.monthNavControls}><IconButton type="button" aria-label="Previous month" onClick={() => shiftMonth(-1)}><ChevronLeft size={18} /></IconButton><h2>{new Date(monthCursor.year, monthCursor.month, 1).toLocaleDateString("en-BD", { month: "long", year: "numeric" })}</h2><IconButton type="button" aria-label="Next month" onClick={() => shiftMonth(1)}><ChevronRight size={18} /></IconButton></div>
+        <Button type="button" variant="secondary" size="small" onClick={goToToday}>Today</Button>
+      </div>
+      <div className={styles.weekdayRow}>{WEEKDAY_LABELS.map((label) => <span key={label}>{label}</span>)}</div>
+      <div className={styles.monthGrid} role="grid" aria-label="Service calendar month view">
+        {grid.map((cell) => {
+          const daySchedules = schedulesByDate.get(cell.date) || [];
+          const isToday = cell.date === today;
+          const isSelected = cell.date === selectedDate;
+          const visibleChips = daySchedules.slice(0, 2);
+          const overflow = daySchedules.length - visibleChips.length;
+          return <button type="button" key={cell.date} role="gridcell" aria-selected={isSelected} className={[styles.dayCell, !cell.inMonth && styles.dayOutside, isToday && styles.dayToday, isSelected && styles.daySelected].filter(Boolean).join(" ")} onClick={() => setSelectedDate(cell.date)}>
+            <span className={styles.dayNumber}>{Number(cell.date.slice(-2))}</span>
+            <span className={styles.dayChips}>{visibleChips.map((schedule) => <span key={schedule.id} className={schedule.status === "PUBLISHED" ? styles.dayChip : styles.dayChipMuted}>{schedule.enterprise_name}</span>)}{overflow > 0 && <span className={styles.dayChipMore}>+{overflow} more</span>}</span>
+          </button>;
+        })}
+      </div>
+      <section className={styles.dayDetail} aria-label={`Service on ${formatDate(selectedDate)}`}>
+        <div className={styles.dayDetailHeading}><h3>{formatDate(selectedDate)}</h3><span>{selectedSchedules.length} {selectedSchedules.length === 1 ? "service" : "services"}</span></div>
+        {selectedSchedules.length === 0 ? <EmptyState title="No service that day" description="Choose another day, or schedule a new service for this date." /> : <div className={styles.timeline}>{selectedSchedules.map((schedule) => <ScheduleCard schedule={schedule} today={today} onEdit={() => setEditingSchedule(schedule)} onCancel={() => cancelSchedule(schedule)} cancelling={cancellingId === schedule.id} key={schedule.id} />)}</div>}
+      </section>
     </>}
 
     {editingSchedule && <ScheduleCutoffEditor schedule={editingSchedule} onClose={() => setEditingSchedule(null)} onSaved={async (cutoffTime) => { setSchedules((current) => current.map((item) => (item.id === editingSchedule.id ? { ...item, cutoff_time: cutoffIsoForDate(item.schedule_date, cutoffTime) } : item))); setNotice(`Choices for ${editingSchedule.enterprise_name} on ${formatDate(editingSchedule.schedule_date)} now close at ${cutoffTime}.`); }} />}
@@ -125,7 +169,7 @@ export function PrerequisiteState({ enterprises }: { enterprises: EnterpriseChoi
 function ScheduleCard({ schedule, today, onEdit, onCancel, cancelling }: { schedule: Schedule; today: string; onEdit: () => void; onCancel: () => void; cancelling: boolean }) {
   const isToday = schedule.schedule_date === today;
   const editable = schedule.status === "PUBLISHED" && schedule.schedule_date >= today;
-  return <article className={styles.schedule}><time dateTime={schedule.schedule_date}><strong>{new Date(`${schedule.schedule_date}T00:00:00`).toLocaleDateString("en-BD", { day: "2-digit" })}</strong><span>{new Date(`${schedule.schedule_date}T00:00:00`).toLocaleDateString("en-BD", { month: "short", weekday: "short" })}</span></time><div className={styles.scheduleBody}><div className={styles.scheduleTitle}><div><h2>{schedule.enterprise_name}</h2><p>Choices close {formatCutoff(schedule.cutoff_time)}</p></div><div className={styles.scheduleTitleActions}><StatusBadge tone={schedule.status === "CANCELLED" ? "neutral" : isToday ? "info" : schedule.status === "PUBLISHED" ? "success" : "neutral"}>{schedule.status === "CANCELLED" ? "CANCELLED" : isToday ? "TODAY" : schedule.status}</StatusBadge>{editable && <div className={styles.scheduleActions}><IconButton type="button" aria-label={`Edit cutoff for ${schedule.enterprise_name} on ${schedule.schedule_date}`} onClick={onEdit}><Pencil size={15} /></IconButton><IconButton type="button" aria-label={`Cancel service for ${schedule.enterprise_name} on ${schedule.schedule_date}`} disabled={cancelling} onClick={onCancel}><Trash2 size={15} /></IconButton></div>}</div></div><div className={styles.scheduleOptions}>{schedule.options.map((option) => <span key={option.label}><b>{option.label}</b>{option.title}</span>)}</div></div></article>;
+  return <article className={styles.schedule}><div className={styles.scheduleBody}><div className={styles.scheduleTitle}><div><h2>{schedule.enterprise_name}</h2><p>Choices close {formatCutoff(schedule.cutoff_time)}</p></div><div className={styles.scheduleTitleActions}><StatusBadge tone={schedule.status === "CANCELLED" ? "neutral" : isToday ? "info" : schedule.status === "PUBLISHED" ? "success" : "neutral"}>{schedule.status === "CANCELLED" ? "CANCELLED" : isToday ? "TODAY" : schedule.status}</StatusBadge>{editable && <div className={styles.scheduleActions}><IconButton type="button" aria-label={`Edit cutoff for ${schedule.enterprise_name} on ${schedule.schedule_date}`} onClick={onEdit}><Pencil size={15} /></IconButton><IconButton type="button" aria-label={`Cancel service for ${schedule.enterprise_name} on ${schedule.schedule_date}`} disabled={cancelling} onClick={onCancel}><Trash2 size={15} /></IconButton></div>}</div></div><div className={styles.scheduleOptions}>{schedule.options.map((option) => <span key={option.label}><b>{option.label}</b>{option.title}</span>)}</div></div></article>;
 }
 
 function ScheduleCutoffEditor({ schedule, onClose, onSaved }: { schedule: Schedule; onClose: () => void; onSaved: (cutoffTime: string) => Promise<void> | void }) {
