@@ -12,7 +12,7 @@ import { employeeNavigation } from "@/lib/employee-navigation";
 import type { ReviewPhoto } from "@/lib/reviews";
 import styles from "./employee-experience.module.css";
 
-type Option = { id: string; label: string; title: string; description: string; image_url: string | null; price: number | null };
+type Option = { id: string; label: string; title: string; description: string; image_url: string | null };
 export type EmployeeSchedule = {
   id: string; schedule_date: string; cutoff_time: string; status: string; is_opted_in: boolean;
   selected_option_id: string | null; location_name: string; can_review: boolean; options: Option[];
@@ -64,11 +64,10 @@ export function MealCalendar({ schedules, today, updatePreference }: { schedules
 function MenuOption({ option, selected, disabled, onSelect }: { option: Option; selected: boolean; disabled: boolean; onSelect: () => void }) {
   return <button type="button" disabled={disabled} onClick={onSelect} className={`${styles.menuOption} ${selected ? styles.selected : ""}`} aria-pressed={selected}>
     <OptionImage option={option}/>
-    <span className={styles.optionCopy}><b>Option {option.label}</b><strong>{option.title}</strong><small>{option.description}</small>{option.price !== null && <span className={styles.optionPrice}>{formatPrice(option.price)}</span>}</span>
+    <span className={styles.optionCopy}><b>Option {option.label}</b><strong>{option.title}</strong><small>{option.description}</small></span>
     {selected && <em>Selected</em>}
   </button>;
 }
 function OptionImage({ option }: { option: Option }) { return <span className={styles.optionImage}><ResilientImage src={option.image_url} surface="employee-meal" fallbackLabel="Meal image unavailable" alt={`${option.title} meal`} fill sizes="(max-width: 600px) 90vw, 260px"/></span>; }
 function formatDate(value: string) { return new Date(`${value}T00:00:00`).toLocaleDateString("en-BD", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
 function formatCutoff(value: string) { return new Date(value).toLocaleTimeString("en-BD", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit" }); }
-function formatPrice(value: number) { return new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT", maximumFractionDigits: Number.isInteger(value) ? 0 : 2 }).format(value); }

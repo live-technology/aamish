@@ -13,7 +13,7 @@ function schedule(offset: number, overrides: Partial<EmployeeSchedule> = {}): Em
   return {
     id: `schedule-${offset}`, schedule_date: localDate(offset), cutoff_time: new Date(Date.now() + 86_400_000).toISOString(), status: "PUBLISHED",
     is_opted_in: true, selected_option_id: "option", location_name: "Gulshan", can_review: offset < 0,
-    options: [{ id: "option", label: "A", title: "Homestyle lunch", description: "Rice and curry", image_url: "https://res.cloudinary.com/demo/image/upload/lunch.jpg", price: 175 }],
+    options: [{ id: "option", label: "A", title: "Homestyle lunch", description: "Rice and curry", image_url: "https://res.cloudinary.com/demo/image/upload/lunch.jpg" }],
     review_id: null, review_rating: null, review_comment: null, review_created_at: null, review_updated_at: null, review_photos: [],
     review_voice_public_id: null, review_voice_url: null, review_voice_duration_seconds: null, ...overrides,
   };
@@ -25,7 +25,7 @@ describe("employee meal and review calendar", () => {
     expect(html).toContain("My Week"); expect(html).toContain("Today"); expect(html).toContain("Upcoming");
     expect(html).not.toContain(formatScheduleDate(-1)); expect(html).not.toContain(formatScheduleDate(7));
     expect(html.indexOf(formatScheduleDate(0))).toBeLessThan(html.indexOf(formatScheduleDate(2)));
-    expect(html).toContain("Homestyle lunch"); expect(html).toContain("Rice and curry"); expect(html).toContain("৳");
+    expect(html).toContain("Homestyle lunch"); expect(html).toContain("Rice and curry"); expect(html).not.toContain("৳");
     expect(html).toContain("lunch.jpg"); expect(html).toContain("Skip this meal");
   });
 
@@ -37,13 +37,13 @@ describe("employee meal and review calendar", () => {
   test("Today is an immediate decision surface with no review or rating UI", () => {
     const html = renderToStaticMarkup(createElement(TodayMeal, { today: localDate(0), schedule: schedule(0), updatePreference: async () => undefined }));
     expect(html).toContain("Today’s meal"); expect(html).toContain("Meal reserved"); expect(html).toContain("Skip this meal");
-    expect(html).toContain("Homestyle lunch"); expect(html).toContain("Rice and curry"); expect(html).toContain("lunch.jpg"); expect(html).toContain("৳");
+    expect(html).toContain("Homestyle lunch"); expect(html).toContain("Rice and curry"); expect(html).toContain("lunch.jpg"); expect(html).not.toContain("৳");
     expect(html).not.toContain("Review"); expect(html).not.toContain("rating");
   });
 
   test("shows every weekly menu as a visual choice without review signals", () => {
     const first = schedule(1);
-    const html = renderToStaticMarkup(createElement(MealCalendar, { today: localDate(0), schedules: [{ ...first, options: [first.options[0], { id: "option-b", label: "B", title: "Vegetable khichuri", description: "Khichuri, egg and salad", image_url: null, price: 140 }] }], updatePreference: async () => undefined }));
+    const html = renderToStaticMarkup(createElement(MealCalendar, { today: localDate(0), schedules: [{ ...first, options: [first.options[0], { id: "option-b", label: "B", title: "Vegetable khichuri", description: "Khichuri, egg and salad", image_url: null }] }], updatePreference: async () => undefined }));
     expect(html).toContain("Homestyle lunch"); expect(html).toContain("Vegetable khichuri"); expect(html).toContain("Khichuri, egg and salad");
     expect(html).toContain("2 meal options"); expect(html).toContain("Meal image unavailable");
     expect(html).not.toContain("Review"); expect(html).not.toContain("rating"); expect(html).not.toContain("stars");

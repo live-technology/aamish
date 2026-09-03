@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
     await setSession(session);
     log("auth.login_succeeded", { requestId, userId: session.userId, role: session.role });
-    return NextResponse.json({ redirectTo: destinationForRole(session.role), requestId });
+    return NextResponse.json({ redirectTo: session.mustChangePassword ? "/change-password" : destinationForRole(session.role), requestId });
   } catch (error) {
     logError("auth.login_error", error, { requestId });
     return NextResponse.json({ error: "LOGIN_FAILED", requestId }, { status: 500 });

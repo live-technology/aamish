@@ -63,6 +63,18 @@ export function suggestEnterpriseAdminUsername(name: string) {
   return `${slugifyEnterpriseName(name).replaceAll("-", ".")}.admin`;
 }
 
+export function assignLocationCodes(names: string[], reserved: string[] = []) {
+  const used = new Set(reserved.map((code) => code.toUpperCase()));
+  return names.map((name) => {
+    const base = name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 16).replace(/-+$/g, "") || "LOCATION";
+    let code = base;
+    let suffix = 2;
+    while (used.has(code)) { code = `${base.slice(0, 13)}-${suffix}`; suffix += 1; }
+    used.add(code);
+    return code;
+  });
+}
+
 export function validateEnterpriseStep(step: EnterpriseStep, draft: EnterpriseDraft) {
   const errors: Record<string, string> = {};
 
@@ -77,7 +89,6 @@ export function validateEnterpriseStep(step: EnterpriseStep, draft: EnterpriseDr
     if (draft.locations.length < 1) errors.locations = "Add at least one delivery location.";
     draft.locations.forEach((location, index) => {
       if (!location.name.trim()) errors[`location-${index}-name`] = "Enter a location name.";
-      if (!location.code.trim()) errors[`location-${index}-code`] = "Enter a short location code.";
       if (!location.address.trim()) errors[`location-${index}-address`] = "Enter the delivery address.";
     });
   }
@@ -85,7 +96,7 @@ export function validateEnterpriseStep(step: EnterpriseStep, draft: EnterpriseDr
   if (step === "administrator" || step === "review") {
     if (!draft.adminFullName.trim()) errors.adminFullName = "Enter the administrator’s name.";
     if (!draft.adminUsername.trim()) errors.adminUsername = "Enter a username.";
-    if (!draft.adminPassword) errors.adminPassword = "Create a temporary password.";
+    if (draft.adminPassword.length < 8) errors.adminPassword = "Use at least 8 characters for the temporary password.";
   }
 
   return errors;

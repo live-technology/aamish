@@ -14,10 +14,12 @@ export default async function OrganizationsPage({ searchParams }: { searchParams
     SELECT e.id, e.name, e.slug, e.status, e.poc_name, e.poc_phone, e.poc_email,
       COUNT(DISTINCT dl.id)::int AS location_count,
       COUNT(DISTINCT ea.id)::int AS admin_count,
+      MIN(au.username) AS admin_username,
       COALESCE(jsonb_agg(DISTINCT jsonb_build_object('id',dl.id,'name',dl.name,'code',dl.code,'address',dl.address,'is_active',dl.is_active)) FILTER (WHERE dl.id IS NOT NULL),'[]') AS locations
     FROM enterprises e
     LEFT JOIN delivery_locations dl ON dl.enterprise_id = e.id
     LEFT JOIN enterprise_admins ea ON ea.enterprise_id = e.id
+    LEFT JOIN app_users au ON au.id = ea.user_id AND au.role = 'ENTERPRISE_ADMIN'
     GROUP BY e.id
     ORDER BY e.created_at DESC
   `;
