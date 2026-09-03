@@ -1,0 +1,147 @@
+.picker {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  min-width: 250px;
+}
+.label {
+  color: var(--aamish-text-muted);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.trigger {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--aamish-border-default);
+  border-radius: var(--aamish-radius-control);
+  background: var(--aamish-surface-default);
+  color: var(--aamish-text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.trigger:hover {
+  border-color: var(--aamish-border-strong);
+}
+.trigger:focus-visible,
+.popover button:focus-visible {
+  outline: 3px solid
+    color-mix(in srgb, var(--aamish-focus-ring) 28%, transparent);
+  outline-offset: 1px;
+}
+.trigger svg {
+  color: var(--aamish-action-primary);
+}
+.trigger b {
+  padding: 0 3px;
+  color: var(--aamish-text-muted);
+}
+.popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  right: 0;
+  width: min(310px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--aamish-border-default);
+  border-radius: 12px;
+  background: var(--aamish-surface-default);
+  box-shadow: 0 14px 40px rgb(23 37 31/0.18);
+}
+.popover header {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+}
+.popover header strong {
+  text-align: center;
+  font-size: 12px;
+}
+.popover header button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--aamish-text-secondary);
+  cursor: pointer;
+}
+.popover header button:hover {
+  background: var(--aamish-surface-subtle);
+}
+.popover header svg {
+  width: 16px;
+}
+.instruction {
+  margin: 6px 0 10px;
+  color: var(--aamish-text-muted);
+  font-size: 9px;
+  text-align: center;
+}
+.weekdays,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.weekdays span {
+  padding: 5px;
+  color: var(--aamish-text-muted);
+  font-size: 8px;
+  font-weight: 900;
+  text-align: center;
+}
+.grid button {
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--aamish-text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.grid button:hover:not(:disabled) {
+  background: var(--aamish-action-primary-soft);
+}
+.grid button[data-outside] {
+  color: var(--aamish-text-muted);
+  opacity: 0.55;
+}
+.grid button[data-range] {
+  border-radius: 0;
+  background: var(--aamish-action-primary-soft);
+  color: var(--aamish-action-primary);
+}
+.grid button[data-edge] {
+  border-radius: 8px;
+  background: var(--aamish-action-primary);
+  color: #fff;
+}
+.grid button:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+@media (max-width: 560px) {
+  .picker {
+    min-width: 0;
+    width: 100%;
+  }
+  .trigger {
+    width: 100%;
+    justify-content: center;
+  }
+  .popover {
+    position: fixed;
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+  }
+}

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { CalendarDays, Flag, Mic, Search, Square, Star, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EmployeeSchedule } from "@/components/employee-portal";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Alert, Button, Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
 import { clientErrorMessage, validateImage } from "@/lib/client-errors";
 import { mealsForHistory } from "@/lib/employee-meals";
@@ -149,7 +150,7 @@ export function EmployeeReviewWorkspace({ schedules, today, onSaved }: { schedul
     <PageHeader eyebrow="Meal history" title="History & reviews" description="Find any past meal and share feedback whenever you are ready. After first submission, edits remain open for exactly 24 hours."/>
     {history.length === 0 ? <EmptyState icon={<CalendarDays size={25}/>} title="No meal history yet" description="Past meals will appear here after your first scheduled service."/> : <div className={styles.historyWorkspace}>
       <aside className={styles.historyPanel} aria-label="Past meal history">
-        <div className={styles.historyFilters}><label className={styles.historySearch}><Search size={15}/><span className="sr-only">Search meal history</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search meal or location"/></label><div className={styles.historyDates}><label><span>From</span><input type="date" max={today} value={fromDate} onChange={(event) => setFromDate(event.target.value)}/></label><label><span>To</span><input type="date" max={today} value={toDate} onChange={(event) => setToDate(event.target.value)}/></label></div></div>
+        <div className={styles.historyFilters}><label className={styles.historySearch}><Search size={15}/><span className="sr-only">Search meal history</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search meal or location"/></label><div className={styles.historyDates}><DateRangePicker value={{ from: fromDate, to: toDate }} max={today} label="Meal history date range" onChange={(range) => { setFromDate(range.from); setToDate(range.to); }}/></div></div>
         <p className={styles.historyCount}>{filteredHistory.length} {filteredHistory.length === 1 ? "meal" : "meals"}</p>
         <div className={styles.reviewHistory}>{filteredHistory.map((item) => { const state = reviewState(item, nowMs); return <button type="button" className={item.id === target?.id ? styles.activeReview : ""} onClick={() => chooseTarget(item)} key={item.id} aria-current={item.id === target?.id ? "true" : undefined}><span><strong>{formatDate(item.schedule_date)}</strong><small>{selectedMeal(item)} · {item.location_name}</small></span><span className={styles.historyStatus}><StatusBadge tone={state.tone}>{state.label}</StatusBadge>{state.detail && <small>{state.detail}</small>}</span></button>; })}{filteredHistory.length === 0 && <div className={styles.noHistoryResults}><strong>No matching meals</strong><span>Try a different search or date range.</span></div>}</div>
       </aside>

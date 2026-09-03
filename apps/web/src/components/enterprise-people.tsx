@@ -106,7 +106,7 @@ export function EnterprisePeople({ enterpriseName, fullName, locations, counts: 
     setCounts((current) => ({ total: current.total + data.inserted, active: current.active + data.inserted })); reload();
   }
   function downloadTemplate() {
-    const csv = `employeeCode,fullName,email,locationCode,username,password\nEMP-001,Employee Name,employee@company.com,${locations[0]?.code || "LOCATION-CODE"},employee.001,1234\n`;
+    const csv = `employeeCode,fullName,email,locationCode,username,password\nEMP-001,Employee Name,employee@company.com,${locations[0]?.code || "LOCATION-CODE"},employee.001,welcome123\n`;
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); const link = document.createElement("a"); link.href = url; link.download = `${enterpriseName.toLowerCase().replaceAll(" ", "-")}-employees.csv`; link.click(); URL.revokeObjectURL(url);
   }
 
@@ -120,16 +120,19 @@ export function EnterprisePeople({ enterpriseName, fullName, locations, counts: 
     {hasMore && <Button type="button" variant="secondary" onClick={loadMore} loading={loading} loadingLabel="Loading…">Load more employees</Button>}
     {editing && <EmployeeEditor employee={editing} locations={locations} onClose={() => setEditing(null)} onSaved={reload} />}
 
-    {createOpen && <div className={styles.backdrop}><form ref={createDialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="employee-dialog-title" tabIndex={-1} onSubmit={createEmployee}><header><div><p>New employee</p><h2 id="employee-dialog-title">Add one employee</h2><span>Required fields are marked before submission.</span></div><IconButton type="button" aria-label="Close employee form" onClick={() => setCreateOpen(false)}><X size={19} /></IconButton></header><div className={styles.dialogBody}><div className={styles.fieldGrid}><TextField label="Full name" name="fullName" required autoFocus /><TextField label="Employee ID" name="employeeCode" required /><TextField label="Corporate email" name="email" type="email" required /><TextField label="Phone" name="phone" description="Optional" /><SelectField label="Delivery location" name="locationId" required defaultValue=""><option value="" disabled>Select location</option>{locations.map((item) => <option value={item.id} key={item.id}>{item.name} ({item.code})</option>)}</SelectField><TextField label="Username" name="username" required /><TextField label="Temporary password" name="password" type="password" minLength={4} description="Minimum 4 characters for this internal beta." required /></div>{notice?.tone === "danger" && <Alert tone="danger" title={notice.title}>{notice.detail}</Alert>}</div><footer><Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button><Button loading={saving} loadingLabel="Creating…">Create employee</Button></footer></form></div>}
+    {createOpen && <div className={styles.backdrop}><form ref={createDialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="employee-dialog-title" tabIndex={-1} onSubmit={createEmployee}><header><div><p>New employee</p><h2 id="employee-dialog-title">Add one employee</h2><span>Required fields are marked before submission.</span></div><IconButton type="button" aria-label="Close employee form" onClick={() => setCreateOpen(false)}><X size={19} /></IconButton></header><div className={styles.dialogBody}><div className={styles.fieldGrid}><TextField label="Full name" name="fullName" required autoFocus /><TextField label="Employee ID" name="employeeCode" required /><TextField label="Corporate email" name="email" type="email" required /><TextField label="Phone" name="phone" description="Optional" /><SelectField label="Delivery location" name="locationId" required defaultValue=""><option value="" disabled>Select location</option>{locations.map((item) => <option value={item.id} key={item.id}>{item.name} ({item.code})</option>)}</SelectField><TextField label="Username" name="username" required /><TextField label="Temporary password" name="password" type="password" minLength={8} description="At least 8 characters. The employee must replace it at first sign-in." required /></div>{notice?.tone === "danger" && <Alert tone="danger" title={notice.title}>{notice.detail}</Alert>}</div><footer><Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button><Button loading={saving} loadingLabel="Creating…">Create employee</Button></footer></form></div>}
 
     {importOpen && <div className={styles.backdrop}><section ref={importDialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="import-title" tabIndex={-1}><header><div><p>Bulk import</p><h2 id="import-title">Import employee CSV</h2><span>Up to 500 rows. Valid rows may be created even if other rows fail.</span></div><IconButton aria-label="Close CSV import" onClick={() => setImportOpen(false)}><X size={19} /></IconButton></header><div className={styles.dialogBody}><ol className={styles.importSteps}><li><b>1</b><div><strong>Download the template</strong><span>Keep the column names and use one of your location codes.</span></div><Button variant="secondary" onClick={downloadTemplate}><Download size={15} /> Download CSV</Button></li><li><b>2</b><div><strong>Complete and upload</strong><span>Required: employeeCode, fullName, email, locationCode.</span></div><Button variant="secondary" loading={saving} loadingLabel="Importing…" onClick={() => fileRef.current?.click()}><FileUp size={15} /> Choose CSV</Button><input ref={fileRef} hidden type="file" accept=".csv,text/csv" onChange={(event) => event.target.files?.[0] && void importCsv(event.target.files[0])} /></li></ol>{importResult && <Alert tone={importResult.errors.length ? "warning" : "success"} title={`${importResult.inserted} of ${importResult.totalRows} employees created`}>{importResult.errors.length ? `${importResult.errors.length} rows failed: ${importResult.errors.map((item) => `row ${item.row} (${clientErrorMessage(item.error, item.error)})`).join(", ")}.` : "Every row was imported successfully."}{importResult.requestId ? ` Request ID: ${importResult.requestId}.` : ""}</Alert>}</div><footer><span /><Button type="button" onClick={() => setImportOpen(false)}>Done</Button></footer></section></div>}
   </AppShell>;
 }
 
-function EmployeeEditor({ employee, locations, onClose, onSaved }: { employee: EnterpriseEmployee; locations: EnterpriseLocation[]; onClose: () => void; onSaved: () => void }) {
+export function EmployeeEditor({ employee, locations, onClose, onSaved }: { employee: EnterpriseEmployee; locations: EnterpriseLocation[]; onClose: () => void; onSaved: () => void }) {
   const [saving, setSaving] = useState(false);
-  const [failure, setFailure] = useState<{ message: string; requestId?: string } | null>(null);
-  const dialogRef = useModalDialog<HTMLFormElement>(true, onClose, saving);
+  const [resetting, setResetting] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [failure, setFailure] = useState<{ title?: string; message: string; requestId?: string } | null>(null);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const dialogRef = useModalDialog<HTMLFormElement>(true, onClose, saving || resetting);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setFailure(null);
@@ -141,8 +144,18 @@ function EmployeeEditor({ employee, locations, onClose, onSaved }: { employee: E
     onSaved(); onClose();
   }
 
+  async function resetPassword() {
+    setResetting(true); setFailure(null); setResetNotice(null);
+    const response = await fetch(`/api/enterprise/employees/${employee.id}/password`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: temporaryPassword }) });
+    const data = await response.json().catch(() => ({}));
+    setResetting(false);
+    if (!response.ok) { setFailure({ title: "Password not reset", message: clientErrorMessage(data.error, "The temporary password could not be set."), requestId: data.requestId }); return; }
+    setTemporaryPassword("");
+    setResetNotice("Temporary password set. The employee must replace it at their next sign-in.");
+  }
+
   return <div className={styles.backdrop}><form ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="employee-edit-title" tabIndex={-1} onSubmit={submit}>
-    <header><div><p>Edit employee</p><h2 id="employee-edit-title">{employee.full_name}</h2><span>Employee ID {employee.employee_code} and username @{employee.username} cannot be changed here.</span></div><IconButton type="button" aria-label="Close employee editor" onClick={onClose} disabled={saving}><X size={19} /></IconButton></header>
+    <header><div><p>Edit employee</p><h2 id="employee-edit-title">{employee.full_name}</h2><span>Employee ID {employee.employee_code} and username @{employee.username} cannot be changed here.</span></div><IconButton type="button" aria-label="Close employee editor" onClick={onClose} disabled={saving || resetting}><X size={19} /></IconButton></header>
     <div className={styles.dialogBody}>
       <div className={styles.fieldGrid}>
         <TextField label="Full name" name="fullName" defaultValue={employee.full_name} required autoFocus />
@@ -151,8 +164,14 @@ function EmployeeEditor({ employee, locations, onClose, onSaved }: { employee: E
         <SelectField label="Delivery location" name="locationId" required defaultValue={employee.location_id}>{locations.map((item) => <option value={item.id} key={item.id}>{item.name} ({item.code})</option>)}</SelectField>
       </div>
       <label className={styles.activeToggle}><input type="checkbox" name="isActive" defaultChecked={employee.is_active} /> Active — can sign in and receive meals</label>
-      {failure && <Alert tone="danger" title="Employee not updated">{failure.message}{failure.requestId && <code>Request ID: {failure.requestId}</code>}</Alert>}
+      <section className={styles.passwordReset} aria-labelledby="employee-password-reset-title">
+        <div><strong id="employee-password-reset-title">Reset sign-in password</strong><span>Set a temporary password. The employee must replace it at their next sign-in.</span></div>
+        <TextField label="Temporary password" name="temporaryPassword" type="password" minLength={8} value={temporaryPassword} onChange={(event) => { setTemporaryPassword(event.target.value); setResetNotice(null); }} />
+        <Button type="button" variant="secondary" disabled={temporaryPassword.length < 8 || saving} loading={resetting} loadingLabel="Resetting…" onClick={() => void resetPassword()}>Reset password</Button>
+        {resetNotice && <Alert tone="success" title="Password reset">{resetNotice}</Alert>}
+      </section>
+      {failure && <Alert tone="danger" title={failure.title || "Employee not updated"}>{failure.message}{failure.requestId && <code>Request ID: {failure.requestId}</code>}</Alert>}
     </div>
-    <footer><Button type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button><Button loading={saving} loadingLabel="Saving…">Save changes</Button></footer>
+    <footer><Button type="button" variant="secondary" onClick={onClose} disabled={saving || resetting}>Cancel</Button><Button loading={saving} loadingLabel="Saving…" disabled={resetting}>Save changes</Button></footer>
   </form></div>;
 }

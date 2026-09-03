@@ -15,6 +15,6 @@ export function destinationForRole(role: AppRole) {
 export function isRoleDestination(value: unknown): value is string {
   return (
     typeof value === "string" &&
-    Object.values(ROLE_DESTINATIONS).includes(value)
+    [...Object.values(ROLE_DESTINATIONS), "/change-password"].includes(value)
   );
 }

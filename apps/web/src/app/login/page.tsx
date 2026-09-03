@@ -8,8 +8,8 @@ type LoginPageProps = {
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const session = await currentSession();
-  if (session) redirect(destinationForRole(session.role));
+  const session = await currentSession({ allowPendingPassword: true });
+  if (session) redirect(session.mustChangePassword ? "/change-password" : destinationForRole(session.role));
 
   const { reason } = await searchParams;
   return <LoginForm sessionEnded={reason === "session-ended"} />;

@@ -14,6 +14,7 @@ describe("authentication navigation", () => {
 
   test("accepts only known post-login destinations", () => {
     expect(isRoleDestination("/admin")).toBe(true);
+    expect(isRoleDestination("/change-password")).toBe(true);
     expect(isRoleDestination("https://example.com")).toBe(false);
     expect(isRoleDestination("/admin/quality")).toBe(false);
   });

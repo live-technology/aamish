@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  assignLocationCodes,
   emptyEnterpriseDraft,
   nextAvailableEnterpriseSlug,
   slugifyEnterpriseName,
@@ -17,11 +18,15 @@ describe("enterprise onboarding", () => {
     expect(nextAvailableEnterpriseSlug("Live", ["live", "live-2"])).toBe("live-3");
   });
 
+  test("assigns stable unique location codes without user input", () => {
+    expect(assignLocationCodes(["Mirpur Office", "Mirpur Office", "তেজগাঁও"])).toEqual(["MIRPUR-OFFICE", "MIRPUR-OFFICE-2", "LOCATION"]);
+  });
+
   test("requires one complete location before review", () => {
     const draft = emptyEnterpriseDraft();
     const errors = validateEnterpriseStep("locations", draft);
     expect(errors["location-0-name"]).toBeTruthy();
-    expect(errors["location-0-code"]).toBeTruthy();
+    expect(errors["location-0-code"]).toBeUndefined();
     expect(errors["location-0-address"]).toBeTruthy();
   });
 
