@@ -28,10 +28,10 @@ This repository contains the architecture, product specifications, user journey 
 │ • Configure Branches │ • Employee Single Add  │ • View Daily/Weekly    │
 │ • Create & Publish   │ • CSV Bulk Upload with │   Menu & Pictures      │
 │   Menus (Dual Img)   │   Dynamic Location     │ • Opt-In / Toggle OFF  │
-│ • Set Cutoff Time    │   Dropdowns            │   before Cutoff        │
+│ • Set Platform Cutoff│   Dropdowns            │   before Cutoff        │
 │ • Real-time Kitchen  │ • Track Daily Counts   │ • 1-5 Star CSAT Review │
-│   Aggregation Matrix │ • View Employee CSAT   │ • Upload 4-5 Photos    │
-│ • Monitor Feedback   │   Trends               │ • D2C "Coming Soon"    │
+│   Aggregation Matrix │ • View Employee CSAT   │ • Photos + Voice       │
+│ • Monitor Feedback   │   Trends               │ • Meal/Review Calendar │
 └──────────────────────┴────────────────────────┴────────────────────────┘
 ```
 
@@ -45,14 +45,16 @@ This repository contains the architecture, product specifications, user journey 
 | **User Journeys & Flows** | Detailed end-to-end user journeys, step-by-step actions, and lifecycle state machines. | [user-journeys.md](user-journeys.md) |
 | **Data Models & Schema** | Relational database schema, ER diagram, data dictionary, and kitchen aggregation SQL queries. | [data-models.md](data-models.md) |
 | **API Specification** | Comprehensive REST API endpoints, request/response JSON payloads, and error codes. | [api-specification.md](api-specification.md) |
+| **Master PRD Traceability** | Approved master decisions, superseded legacy rules, and role-by-role acceptance evidence. | [master-prd-traceability.md](master-prd-traceability.md) |
+| **UX Redesign Baseline** | Current capability audit, proposed information architecture, design-system contract, and delivery process. | [redesign/ux-audit.md](redesign/ux-audit.md) |
 
 ---
 
 ## 🔑 Critical Business Rules & Decisions
 
 1. **Strict Order Cutoff Time**:
-   * Cutoff time is configured by Aamish Admin in alignment with kitchen logistics (e.g. 10:00 AM daily or 5:00 PM previous day).
-   * Once cutoff time is reached, employee meal toggling is strictly locked. No changes are permitted while kitchen prep and dispatch are underway.
+   * One platform-wide cutoff defaults to 12:05 AM Dhaka time and is configured from the Aamish dashboard; daily publication derives it automatically.
+   * A change immediately recalculates every service dated today or later, including one previously locked under the old value. Historical service timestamps remain unchanged.
 
 2. **Responsive Dual-Image Processing**:
    * Menus require two image variants: High-resolution for desktop presentation and compressed/thumbnail for lightweight mobile 4G/3G loading.
@@ -61,11 +63,11 @@ This repository contains the architecture, product specifications, user journey 
    * When an Enterprise Admin downloads the employee roster CSV template, the system dynamically populates that enterprise's valid delivery locations to eliminate spelling errors and branch misassignments.
 
 4. **Rich Review & CSAT Engine**:
-   * Employs a 1–5 star CSAT scale, supports backdated review entry within the active week, permits review edits, and allows up to 4–5 photo uploads to document food presentation and quality.
+   * Employs a 1–5 CSAT scale, permits submission for any previous received meal, preserves up to five photos, supports optional one-minute voice, and allows edits for exactly 24 hours after initial submission.
 
 5. **MVP Scope Boundaries**:
-   * *In Scope*: Single Daily Meal, 3 Platforms, Enterprise & Location setup, Cutoff lock, CSV bulk upload, Kitchen aggregation matrix, CSAT reviews with photos.
-   * *Deferred to Phase 2+*: Complex subsidy split-wallets, multi-meal windows (breakfast/dinner), bidding marketplace, D2C home ordering (displayed as "Coming Soon").
+   * *In Scope*: Single Daily Meal, 3 Platforms, Enterprise & Location setup, platform cutoff lock, employee meal calendar, CSV bulk upload, Kitchen aggregation matrix, and CSAT reviews with text/photos/voice.
+   * *Deferred to Phase 2+*: Complex subsidy split-wallets, multi-meal windows (breakfast/dinner), bidding marketplace, and D2C home ordering or teaser.
 
 ---
 

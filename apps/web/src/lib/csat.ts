@@ -1,0 +1,2 @@
+export type RatingDay={date:string;average:number;count:number};
+export function dailyCsat(rows:{schedule_date:string;rating:number}[]):RatingDay[]{const days=new Map<string,number[]>();for(const row of rows)days.set(row.schedule_date,[...(days.get(row.schedule_date)||[]),row.rating]);return [...days].sort(([a],[b])=>a.localeCompare(b)).map(([date,ratings])=>({date,count:ratings.length,average:ratings.reduce((a,b)=>a+b,0)/ratings.length}))}

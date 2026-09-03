@@ -74,6 +74,24 @@ bun --env-file=../../.env run feedback:transcribe
 
 Use `-- --limit 5` to cap a batch, `-- --id <feedback-uuid>` to target one submission, or add `--force` to intentionally replace an existing transcript. Add `--show-content` only when transcript content is safe to print in the current terminal. The command stores transcripts on `platform_feedback` and appends Gemini token counts to `ai_usage_events`.
 
+### Reset automated beta data
+
+Use a separate Neon branch/database for staging and map its `DATABASE_URL` only to Vercel Preview and local QA. Keep the internal release database mapped to Vercel Production. Do not create duplicate staging tables inside one database; separate databases prevent test fixtures, migrations, and cleanup from affecting the release environment.
+
+The reset utility is dry-run by default and prints counts only. From `apps/web`:
+
+```bash
+bun --env-file=../../.env run data:reset -- --date 2026-09-01
+```
+
+After checking the date-scoped counts, execute with the exact confirmation printed by the dry run:
+
+```bash
+bun --env-file=../../.env run data:reset -- --date 2026-09-01 --execute --confirm DELETE-BETA-DATA-2026-09-01
+```
+
+The calendar boundary is Asia/Dhaka. The command uses one transaction and deletes only rows whose creation timestamp (or preference toggle timestamp) falls inside that day. Neon branch creation remains an operator action in the Neon console; never point the staging branch at production customer data.
+
 ## Validation
 
 Run application checks from `apps/web`:
@@ -112,6 +130,11 @@ This beta may be deployed only as a protected internal testing environment.
 - [Data model](docs/data-models.md)
 - [API specification](docs/api-specification.md)
 - [Development notes](docs/development.md)
+- [Beta feedback analysis and work plan](docs/feedback-analysis-and-workplan-2026-09-01.md)
+- [UX audit and capability-preservation contract](docs/redesign/ux-audit.md)
+- [Redesigned information architecture](docs/redesign/information-architecture.md)
+- [Design-system contract](docs/redesign/design-system.md)
+- [Lean redesign delivery system](docs/redesign/delivery-system.md)
 - [Contribution and PR rules](AGENTS.md)
 
 ## Production readiness

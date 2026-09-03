@@ -3,6 +3,8 @@
 
 ---
 
+> **Authority and status:** This repository document is the authoritative functional contract for the internal Aamish MVP through 31 December 2026. Where older feature notes, journeys, API examples, or implementation behavior conflict with this PRD, this PRD and the linked [master-PRD traceability matrix](master-prd-traceability.md) take precedence. Aamish remains an internal beta and is not production-ready.
+
 ## 1. Executive Summary & Vision
 
 **Aamish (আমিষ)** is a modern B2B Corporate Meal Management and Delivery platform designed to streamline office meal logistics, employee meal choice management, and real-time food quality feedback for enterprises in Bangladesh.
@@ -33,7 +35,7 @@ The system consists of three independent portals / panels:
 
 1. **Aamish Live Super Admin Portal**: Platform control panel used by Aamish Operations to onboard enterprises, configure locations, manage & publish daily menus, enforce cutoff times, view aggregated delivery headcounts, and analyze quality CSAT metrics.
 2. **Enterprise Admin Portal**: Client-facing portal used by enterprise HR / Office Admins (e.g., Live Technologies Admin) to manage employee rosters (single & bulk CSV upload), assign office delivery branches, and monitor daily meal allocations and company-level reviews.
-3. **Enterprise User (Employee) Portal**: Mobile-responsive web interface for employees to view upcoming menus, opt-in/opt-out (toggle off) before cutoff time, and submit daily CSAT reviews with food photos and comments.
+3. **Enterprise User (Employee) Portal**: Mobile-responsive web interface for employees to view historical, current, and planned meals, opt-in/opt-out before cutoff, and submit CSAT reviews with text, photos, or voice.
 
 ---
 
@@ -43,17 +45,17 @@ The system consists of three independent portals / panels:
 * **Multi-Tenant Foundation**: Enterprise onboarding with multiple physical delivery locations (e.g., Live Technologies: *Notun Bazar*, *Uttarkhan*, *Baridhara/Boran*).
 * **Enterprise Admin Accounts**: Multiple admin credentials per enterprise with pre-generated secure credentials.
 * **Menu Repository & Publishing**: Menu creation with dual image optimization (desktop large + mobile compressed thumbnail), scheduled date-wise publishing.
-* **Logistics Cutoff Enforcement**: Strict order cutoff time set by Aamish Admin. Meal selections/opt-outs lock after cutoff time.
+* **Platform Cutoff Enforcement**: One Aamish-wide cutoff defaults to 12:05 AM Dhaka time and is configurable from the Aamish dashboard. Daily service publication derives its cutoff automatically.
 * **Employee Management**: Single add and CSV/Excel bulk upload with dynamically generated delivery location dropdowns/options.
 * **Employee Daily Choice**: Default meal allocation with single-click toggle off (skip meal) before cutoff.
-* **Rich Review & CSAT Engine**: 1–5 star rating, photo uploads (up to 4–5 images per review), qualitative feedback tags, and backdated review submission/editing.
+* **Meal Calendar and Review Engine**: Historical, current, and planned meals are visible in one employee calendar. Any previous received meal can be reviewed without a submission expiry using a 1–5 score, text, up to five photos, and an optional voice recording of at most one minute. Reviews are editable for exactly 24 hours after initial submission and then become read-only.
 * **Kitchen Aggregation Dashboard**: Tabular real-time matrix (Rows = Menus, Columns = Locations, Values = Quantities) for kitchen and delivery dispatch.
 
 ### 3.2 Explicitly Out-of-Scope for MVP (Deferred to Phase 2+)
 * **Complex Subsidy & Wallet System**: Variable enterprise subsidies (e.g., 75 BDT company contribution + co-pay from employee wallet). MVP operates on single full-subsidy/fixed company-billed meals.
 * **Bidding & Vendor Tender Marketplace**: No dynamic third-party kitchen bidding.
 * **Multi-Meal Services**: Breakfast, late-night dinners, and 24-hour shift orders are deferred. The system will handle **Single Daily Meal** (Lunch/Scheduled shift meal).
-* **Direct-to-Consumer (D2C) Home Delivery**: Personal meal ordering for home will show a `"Coming Soon"` badge.
+* **Direct-to-Consumer (D2C) Home Delivery**: Personal meal ordering and a D2C teaser are not part of the MVP employee experience.
 * **Automated Dispatch / Courier Tracking**: Real-time driver GPS tracking is deferred; delivery status will be recorded via status markers.
 * **Self-Serve Password Resets / SSO**: Initial access uses pre-generated credentials managed by platform/enterprise admins.
 
@@ -85,10 +87,12 @@ The system consists of three independent portals / panels:
   * Publish Action: Make menu visible to employees for the scheduled dates.
 
 #### 4.3 Logistics & Cutoff Management
-* **Cutoff Time Configuration**:
-  * Configurable per enterprise/globally (e.g., 10:00 AM daily or 5:00 PM previous day).
-  * Once the cutoff time passes, employee meal toggling is strictly disabled.
-  * Operational State switches to `Locked / In Kitchen Prep`.
+* **Platform Cutoff Configuration**:
+  * One platform-wide setting is managed by a Super Admin from the Aamish dashboard.
+  * The default is `00:05` in `Asia/Dhaka` (12:05 AM on the service date).
+  * Daily publishing does not ask for a cutoff; the service timestamp is derived from the service date and platform setting.
+  * Changing the setting immediately recalculates every service dated today or later in Dhaka time, including a service whose prior cutoff passed. A later time can therefore reopen a current service and an earlier time can lock it immediately.
+  * Services before the current Dhaka date retain their historical cutoff timestamp.
 
 #### 4.4 Aggregated Kitchen & Dispatch Dashboard
 * **Real-time Order Matrix (Read-Only)**:
@@ -132,7 +136,7 @@ The system consists of three independent portals / panels:
 
 #### 4.9 Employee Login & Dashboard
 * Quick login via Employee ID / company email credentials.
-* View Today's & This Week's published menu cards with responsive food photography and meal descriptions.
+* View a calendar containing historical meals and reviews, today's meal, and planned services with responsive food photography and meal descriptions.
 
 #### 4.10 Meal Preference & Opt-Out (Toggle Off)
 * Default Status: Every registered employee is assigned the scheduled daily meal by default.
@@ -146,15 +150,12 @@ The system consists of three independent portals / panels:
 
 #### 4.11 Daily Food Review & Quality Feedback
 * **CSAT Rating**: 1 to 5 Stars / Smileys (1 = Poor, 5 = Excellent).
-* **Backdated Review Submission**: Employees can select past dates within the current week to review previous meals if they missed reviewing on the day.
-* **Review Editability**: Users can edit/update their review (e.g., add more details or clarify comments).
-* **Photo Upload**: Attach up to 4–5 photos (e.g., plating quality, portion size, quality defect like undercooked vegetable).
+* **Backdated Review Submission**: Employees can review any previous opted-in/received meal; there is no submission expiry.
+* **Review Editability**: A review can be updated for exactly 24 hours after its initial submission. Updating it does not restart or extend that deadline. Afterward it remains visible but read-only to the employee.
+* **Photo Upload**: Attach up to five photos (e.g., plating quality, portion size, or a quality defect).
+* **Voice Review**: Attach one optional voice recording with a maximum duration of one minute.
 * **Feedback Comment Box**: Freeform notes on taste, portion size, hygiene, or packaging.
-* **Incentive / Gamification Tracker**: Display review streaks (e.g., "Complete 22 daily reviews to earn your reward box!").
-
-#### 4.12 Direct-to-Consumer (D2C) Module (Future Teaser)
-* Navigation tab: `Personal / Home Delivery`.
-* Status: Displays `"Coming Soon - Order Aamish meals for your home & family"`.
+* **Review Integrity**: Employees cannot delete reviews. Authorized administrators can read text, photos, and voice only within their role and enterprise scope.
 
 ---
 

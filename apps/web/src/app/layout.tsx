@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./admin.css";
 import "./admin-sections.css";
+import "../styles/tokens.css";
 import { FeedbackWidget } from "@/components/feedback-widget";
 import { currentSession } from "@/lib/auth";
 

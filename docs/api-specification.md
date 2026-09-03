@@ -3,11 +3,12 @@
 
 ---
 
-## 1. Authentication & Base URL
-* **Base URL**: `https://api.aamish.com/v1`
-* **Auth Scheme**: Bearer Token / Session Header
-  * Super Admin Token: `Role: SUPER_ADMIN`
-  * Enterprise Admin Token: `Role: ENTERPRISE_ADMIN`, Scoped to `enterprise_id`
+## 1. Contract Status, Authentication & Base URL
+* **Contract status**: These routes describe the approved MVP interface. An endpoint marked for Beta 0.3 may not exist until its linked implementation task is merged.
+* **Base URL**: Same-origin `/api` routes in the internal beta web application.
+* **Auth Scheme**: Signed HTTP-only session cookie
+  * Super Admin Session: `Role: SUPER_ADMIN`
+  * Enterprise Admin Session: `Role: ENTERPRISE_ADMIN`, Scoped to `enterprise_id`
   * Employee Session: `Role: EMPLOYEE`, Scoped to `employee_id` and `enterprise_id`
 
 ---
@@ -55,6 +56,12 @@
     ```
 
 ### 2.2 Menu Catalog & Scheduling
+* `GET /api/admin/settings/cutoff`
+  * **Description**: Read the platform-wide Dhaka cutoff. Super Admin only.
+* `PATCH /api/admin/settings/cutoff`
+  * **Description**: Update the platform-wide cutoff and immediately recalculate every current/future service.
+  * **Request Body**: `{ "cutoffTime": "00:05" }`
+  * **Response**: `{ "cutoffTime": "00:05", "timezone": "Asia/Dhaka", "affectedServices": 12, "requestId": "..." }`
 * `POST /admin/menus`
   * **Description**: Create a master menu item/package.
   * **Request Body**:
@@ -68,18 +75,18 @@
       "image_mobile_url": "https://cdn.aamish.com/menus/polao-roast-thumb.jpg"
     }
     ```
-* `POST /admin/schedules/publish`
+* `POST /api/admin/schedules`
   * **Description**: Schedule and publish a menu for a specific date & enterprise.
   * **Request Body**:
     ```json
     {
       "enterprise_id": "8c12a84e-3995-46f0-b8d4-63cb5fb490f2",
-      "menu_id": "4b6e5801-64d8-4f81-9b16-56f87498c199",
+      "menu_ids": ["4b6e5801-64d8-4f81-9b16-56f87498c199"],
       "schedule_date": "2026-08-31",
-      "meal_type": "LUNCH",
-      "cutoff_time": "2026-08-31T10:00:00+06:00"
+      "meal_type": "LUNCH"
     }
     ```
+  * **Business Rule**: The server derives `cutoff_time` from `schedule_date` and the platform-wide `Asia/Dhaka` setting. Clients do not send a daily cutoff.
 
 ### 2.3 Operations & Kitchen Matrix
 * `GET /admin/operations/matrix?date=2026-08-31&enterprise_id=8c12a84e...`
@@ -88,7 +95,7 @@
     ```json
     {
       "date": "2026-08-31",
-      "cutoff_time": "2026-08-31T10:00:00+06:00",
+      "cutoff_time": "2026-08-31T00:05:00+06:00",
       "is_cutoff_passed": true,
       "summary": {
         "total_active_meals": 38,
@@ -168,15 +175,15 @@
 
 ## 4. Enterprise User (Employee) API
 
-### 4.1 Daily Menu & Schedule
-* `GET /user/schedule/today`
-  * **Description**: Fetch today's menu, cutoff countdown, and employee meal preference.
+### 4.1 Meal Calendar
+* `GET /api/employee/calendar`
+  * **Description**: Fetch historical, current, and planned meal services with employee preference and review state.
   * **Response**:
     ```json
     {
       "date": "2026-08-31",
       "schedule_id": "c138fbd4-84c1-4b11-a8bb-e2bcf92d5390",
-      "cutoff_time": "2026-08-31T10:00:00+06:00",
+      "cutoff_time": "2026-08-31T00:05:00+06:00",
       "is_cutoff_passed": false,
       "menu": {
         "title": "Special Bengali Polao & Sonali Roast",
@@ -191,7 +198,7 @@
     ```
 
 ### 4.2 Meal Preference Toggle
-* `PUT /user/preference/toggle`
+* `PATCH /api/preferences`
   * **Description**: Opt-in or Opt-out (Toggle OFF) for a scheduled meal.
   * **Business Rule**: Returns `403 Forbidden` if current time $\ge$ `cutoff_time`.
   * **Request Body**:
@@ -205,13 +212,13 @@
     ```json
     {
       "error": "CUTOFF_TIME_EXPIRED",
-      "message": "Meal modifications are locked for kitchen preparation after 10:00 AM."
+      "message": "Meal modifications are locked after the platform cutoff."
     }
     ```
 
-### 4.3 Daily Review & Photos
-* `POST /user/reviews`
-  * **Description**: Submit or update a CSAT rating, comment, and photo proof.
+### 4.3 Meal Reviews, Photos, and Voice
+* `POST /api/reviews`
+  * **Description**: Create a review for any previous received meal, or update it within 24 hours of initial submission.
   * **Request Body**:
     ```json
     {
@@ -220,8 +227,19 @@
       "comment": "Food was fresh, warm, and portion size was great!",
       "photos": [
         "https://cdn.aamish.com/user-uploads/live1042-meal-1.jpg"
-      ]
+      ],
+      "voice": {
+        "public_id": "aamish/reviews/voice/example",
+        "url": "https://res.cloudinary.com/example/video/upload/example.webm",
+        "duration_seconds": 42
+      }
     }
     ```
-* `GET /user/reviews/history`
-  * **Description**: Retrieve past 7 days review history for backdated review entry or edits.
+  * **Business Rules**:
+    * Submission has no expiry for a previous opted-in/received meal.
+    * Voice is optional and limited to 60 seconds.
+    * Updates are accepted only while `now < created_at + 24 hours`.
+    * An update never changes `created_at` or extends the deadline.
+    * Employees cannot delete reviews.
+* `GET /api/employee/calendar`
+  * **Description**: Returns historical review state together with current and planned meals; review media URLs are returned only to an authorized user in scope.

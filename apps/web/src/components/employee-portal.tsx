@@ -1,34 +1,73 @@
 "use client";
 
-import Image from "next/image";
-import { Clock3, LogOut, MapPin, Star, Upload } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { CalendarDays, Clock3, MapPin } from "lucide-react";
 import { useState } from "react";
-import { clientErrorMessage, validateImage } from "@/lib/client-errors";
+import { EmployeeReviewWorkspace } from "@/components/employee-review-workspace";
+import { AppShell } from "@/components/ui/app-shell";
+import { Alert, Button, Card, EmptyState, PageHeader, StatusBadge } from "@/components/ui/primitives";
+import { ResilientImage } from "@/components/ui/resilient-image";
+import { clientErrorMessage } from "@/lib/client-errors";
+import { mealFulfillmentState, mealPhase, mealsForWeek } from "@/lib/employee-meals";
+import { employeeNavigation } from "@/lib/employee-navigation";
+import type { ReviewPhoto } from "@/lib/reviews";
+import styles from "./employee-experience.module.css";
 
 type Option = { id: string; label: string; title: string; description: string; image_url: string | null };
-export type EmployeeSchedule = { id: string; schedule_date: string; cutoff_time: string; status: string; is_opted_in: boolean; selected_option_id: string | null; location_name: string; options: Option[] };
-type Photo = { publicId: string; url: string; thumbnailUrl: string };
+export type EmployeeSchedule = {
+  id: string; schedule_date: string; cutoff_time: string; status: string; is_opted_in: boolean;
+  selected_option_id: string | null; location_name: string; can_review: boolean; options: Option[];
+  review_id: string | null; review_rating: number | null; review_comment: string | null;
+  review_created_at: string | null; review_updated_at: string | null; review_photos: ReviewPhoto[];
+  review_voice_public_id: string | null; review_voice_url: string | null; review_voice_duration_seconds: number | null;
+};
 
-async function uploadPhoto(file: File): Promise<Photo> {
-  const signatureResponse = await fetch("/api/uploads/signature", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "review" }) });
-  const signed = await signatureResponse.json(); if (!signatureResponse.ok) throw new Error(signed.error);
-  const form = new FormData(); form.set("file", file); form.set("api_key", signed.apiKey); form.set("timestamp", String(signed.timestamp)); form.set("signature", signed.signature); form.set("folder", signed.folder);
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`, { method: "POST", body: form }); const data = await response.json();
-  if (!response.ok) throw new Error(data.error?.message || "UPLOAD_FAILED");
-  return { publicId: data.public_id, url: data.secure_url, thumbnailUrl: data.secure_url.replace("/upload/", "/upload/c_fill,w_320,h_240,q_auto,f_auto/") };
-}
-
-export function EmployeePortal({ fullName, enterpriseName, schedules: initialSchedules }: { fullName: string; enterpriseName: string; schedules: EmployeeSchedule[] }) {
-  const router = useRouter(); const [schedules, setSchedules] = useState(initialSchedules); const [message, setMessage] = useState(""); const [rating, setRating] = useState(0); const [comment, setComment] = useState(""); const [photos, setPhotos] = useState<Photo[]>([]); const [uploading, setUploading] = useState(false);
+export function EmployeePortal({ fullName, enterpriseName, schedules: initialSchedules, view }: { fullName: string; enterpriseName: string; schedules: EmployeeSchedule[]; view: "today" | "schedule" | "reviews" }) {
+  const [schedules, setSchedules] = useState(initialSchedules);
+  const [message, setMessage] = useState("");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
-  const active = schedules.find((schedule) => schedule.schedule_date >= today);
-  const reviewTarget = [...schedules].filter((schedule) => schedule.schedule_date <= today).sort((a, b) => b.schedule_date.localeCompare(a.schedule_date))[0];
-  const locked = active ? new Date(active.cutoff_time) <= new Date() : true;
+  const active = schedules.find((schedule) => schedule.schedule_date === today);
 
-  async function updatePreference(optedIn: boolean, selectedOptionId?: string) { if (!active) return; const response = await fetch("/api/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ scheduleId: active.id, optedIn, selectedOptionId }) }); const data = await response.json(); if (!response.ok) return setMessage(clientErrorMessage(data.error,"The meal preference could not be updated.")); setSchedules((current) => current.map((schedule) => schedule.id === active.id ? { ...schedule, is_opted_in: optedIn, selected_option_id: selectedOptionId || schedule.selected_option_id } : schedule)); setMessage("Meal preference updated."); }
-  async function addPhotos(files: FileList | null) { if (!files) return; const selected=[...files].slice(0,5-photos.length);const invalid=selected.map((file)=>validateImage(file)).find(Boolean);if(invalid)return setMessage(invalid);setUploading(true); try { const uploaded = await Promise.all(selected.map(uploadPhoto)); setPhotos((current) => [...current, ...uploaded]);setMessage(""); } catch (error) { setMessage(clientErrorMessage(error instanceof Error ? error.message : "UPLOAD_FAILED")); } finally { setUploading(false); } }
-  async function saveReview() { if (!reviewTarget || !rating) return setMessage("Choose a rating first."); const response = await fetch("/api/reviews", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scheduleId: reviewTarget.id, rating, comment, tags: [], photos }) }); const data = await response.json(); setMessage(response.ok ? "Review submitted to the Aamish quality team." : clientErrorMessage(data.error,"The review could not be submitted.")); }
+  async function updatePreference(schedule: EmployeeSchedule, optedIn: boolean, selectedOptionId?: string) {
+    const response = await fetch("/api/preferences", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ scheduleId: schedule.id, optedIn, selectedOptionId }) });
+    const data = await response.json();
+    if (!response.ok) return setMessage(clientErrorMessage(data.error, "The meal preference could not be updated."));
+    setSchedules((current) => current.map((item) => item.id === schedule.id ? { ...item, is_opted_in: optedIn, selected_option_id: selectedOptionId || item.selected_option_id } : item));
+    setMessage(`Meal preference updated for ${formatDate(schedule.schedule_date)}.`);
+  }
 
-  return <div className="employee-app"><header><Image src="/brand/amish-logo-01.png" alt="Aamish" width={118} height={40} /><div><b>{fullName}</b><span>{enterpriseName}</span></div><button aria-label="Sign out" onClick={() => fetch("/api/auth/logout", { method: "POST" }).then(() => router.push("/login"))}><LogOut size={17} /></button></header><main><p className="eyebrow">EMPLOYEE MEALS</p><h1>Hello, {fullName.split(" ")[0]}.</h1>{!active ? <section className="employee-empty"><h2>No upcoming meal is scheduled</h2><p>Your company’s next published package will appear here.</p></section> : <section className="employee-meal"><div className="employee-meal-head"><div><time>{new Date(`${active.schedule_date}T00:00:00`).toLocaleDateString("en-BD", { weekday: "long", day: "numeric", month: "long" })}</time><h2>Choose your meal</h2><span><MapPin size={14} />{active.location_name}</span></div><em className={locked ? "locked" : "open"}><Clock3 size={14} />{locked ? "Locked" : "Cutoff " + new Date(active.cutoff_time).toLocaleTimeString("en-BD", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit" })}</em></div><div className="employee-options">{active.options.map((option) => <button type="button" key={option.id} disabled={locked || !active.is_opted_in} onClick={() => updatePreference(true, option.id)} className={active.selected_option_id === option.id ? "selected" : ""}><b>Option {option.label}</b><strong>{option.title}</strong><p>{option.description}</p></button>)}</div><div className="meal-toggle"><div><b>{active.is_opted_in ? "Meal reserved" : "Meal skipped"}</b><span>{active.is_opted_in ? "You are included in the kitchen count." : "Restore before cutoff if plans change."}</span></div><button type="button" aria-label={active.is_opted_in ? "Skip meal" : "Reserve meal"} disabled={locked} className={active.is_opted_in ? "switch on" : "switch"} onClick={() => updatePreference(!active.is_opted_in)}><i /></button></div></section>}{reviewTarget ? <section className="employee-review"><h2>Review your meal</h2><p>For {new Date(`${reviewTarget.schedule_date}T00:00:00`).toLocaleDateString("en-BD", { day: "numeric", month: "long" })}. Reviews remain open for seven days.</p><div className="stars">{[1, 2, 3, 4, 5].map((value) => <button type="button" aria-label={`${value} stars`} className={value <= rating ? "lit" : ""} onClick={() => setRating(value)} key={value}><Star size={25} fill="currentColor" /></button>)}</div><textarea value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Taste, portion, hygiene, or packaging notes" rows={4} /><div className="review-photos">{photos.map((photo) => <Image src={photo.thumbnailUrl} alt="Review upload" width={88} height={66} key={photo.publicId} />)}</div><label className="upload-button"><Upload size={16} />{uploading ? "Uploading…" : "Add photos (max 5, 8 MB each)"}<input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={uploading || photos.length >= 5} onChange={(event) => void addPhotos(event.target.files)} /></label><button className="primary" type="button" disabled={uploading} onClick={saveReview}>Submit review</button></section> : <section className="employee-empty compact"><h2>No meal available to review</h2><p>Reviews open on the meal date and remain available for seven days.</p></section>}{message && <p className="employee-message">{message}</p>}</main></div>;
+  const path = view === "today" ? "/employee" : view === "schedule" ? "/employee/schedule" : "/employee/reviews";
+  return <AppShell workspace={enterpriseName} fullName={fullName} roleLabel="Employee" currentPath={path} navigation={employeeNavigation}>
+    {view === "today" && <TodayMeal schedule={active} today={today} updatePreference={updatePreference} />}
+    {view === "schedule" && <MealCalendar schedules={schedules} today={today} updatePreference={updatePreference} />}
+    {view === "reviews" && <EmployeeReviewWorkspace schedules={schedules} today={today} onSaved={(scheduleId, review) => setSchedules((current) => current.map((item) => item.id === scheduleId ? { ...item, ...review } : item))} />}
+    {message && view !== "reviews" && <div className={styles.message}><Alert tone="info" title="Meal preference">{message}</Alert></div>}
+  </AppShell>;
 }
+
+export function TodayMeal({ schedule, today, updatePreference }: { schedule: EmployeeSchedule | undefined; today: string; updatePreference: (schedule: EmployeeSchedule, optedIn: boolean, selectedOptionId?: string) => Promise<void> }) {
+  if (!schedule) return <><PageHeader eyebrow="Today" title="Your meal" description="Confirm the meal you are receiving before the cutoff."/><EmptyState icon={<CalendarDays size={25}/>} title="No meal today" description="Your company has not published a meal for today."/></>;
+  const cancelled = schedule.status === "CANCELLED";
+  const locked = cancelled || new Date(schedule.cutoff_time) <= new Date();
+  return <><PageHeader eyebrow="Today" title="Your meal" description="Confirm the meal you are receiving before the cutoff."/><Card className={styles.today} padded={false}><header><div><time>{formatDate(schedule.schedule_date)}</time><h2>{schedule.schedule_date === today ? "Today’s meal" : "Your next meal"}</h2><span><MapPin size={14}/>{schedule.location_name}</span></div><StatusBadge tone={cancelled ? "neutral" : locked ? "neutral" : "success"}><Clock3 size={12}/>{cancelled ? "Cancelled" : locked ? "Cutoff passed" : `Cutoff ${formatCutoff(schedule.cutoff_time)}`}</StatusBadge></header><div className={styles.options}>{schedule.options.map((option) => <MenuOption key={option.id} option={option} selected={schedule.selected_option_id === option.id} disabled={locked || !schedule.is_opted_in} onSelect={() => updatePreference(schedule, true, option.id)}/>)}</div><footer><div><strong>{schedule.is_opted_in ? "Meal reserved" : "Meal skipped"}</strong><span>{cancelled ? "This service was cancelled by the Aamish team." : locked ? "The cutoff passed; contact your office administrator if this is incorrect." : schedule.is_opted_in ? "You are included in the kitchen count." : "Reserve again before cutoff if plans change."}</span></div><Button variant={schedule.is_opted_in ? "secondary" : "primary"} disabled={locked} onClick={() => updatePreference(schedule, !schedule.is_opted_in)}>{schedule.is_opted_in ? "Skip this meal" : "Reserve meal"}</Button></footer></Card></>;
+}
+
+export function MealCalendar({ schedules, today, updatePreference }: { schedules: EmployeeSchedule[]; today: string; updatePreference: (schedule: EmployeeSchedule, optedIn: boolean, selectedOptionId?: string) => Promise<void> }) {
+  const week = mealsForWeek(schedules, today);
+  return <><PageHeader eyebrow="Your next seven days" title="My Week" description="See the nearest meal decisions first. History and reviews stay in their own workspace."/>{week.length === 0 ? <EmptyState icon={<CalendarDays size={25}/>} title="No meals in your week" description="Published meals for the next seven days will appear here."/> : <section className={styles.calendar} aria-label="Meals in the next seven days">{week.map((item) => {
+    const phase = mealPhase(item, today);
+    const cancelled = item.status === "CANCELLED";
+    const locked = cancelled || new Date(item.cutoff_time) <= new Date();
+    return <Card className={styles.calendarRow} key={item.id}><header><div><span>{phase}</span><time>{formatDate(item.schedule_date)}</time><small><MapPin size={13}/>{item.location_name}</small></div><StatusBadge tone={cancelled ? "neutral" : phase === "Today" ? "info" : "success"}>{cancelled ? "Cancelled" : mealFulfillmentState(item, today)}</StatusBadge></header><div className={styles.weekOptions} aria-label={`${item.options.length} meal ${item.options.length === 1 ? "option" : "options"} for ${formatDate(item.schedule_date)}`}>{item.options.map((option) => <MenuOption key={option.id} option={option} selected={item.selected_option_id === option.id} disabled={locked || !item.is_opted_in} onSelect={() => updatePreference(item, true, option.id)}/>)}</div><footer><small>{cancelled ? "This meal service was cancelled" : locked ? "Cutoff passed — contact your office administrator to make a change" : `Choices close ${formatCutoff(item.cutoff_time)}`}</small><Button size="small" variant={item.is_opted_in ? "secondary" : "primary"} disabled={locked} onClick={() => updatePreference(item, !item.is_opted_in)}>{item.is_opted_in ? "Skip this meal" : "Reserve meal"}</Button></footer></Card>;
+  })}</section>}</>;
+}
+
+function MenuOption({ option, selected, disabled, onSelect }: { option: Option; selected: boolean; disabled: boolean; onSelect: () => void }) {
+  return <button type="button" disabled={disabled} onClick={onSelect} className={`${styles.menuOption} ${selected ? styles.selected : ""}`} aria-pressed={selected}>
+    <OptionImage option={option}/>
+    <span className={styles.optionCopy}><b>Option {option.label}</b><strong>{option.title}</strong><small>{option.description}</small></span>
+    {selected && <em>Selected</em>}
+  </button>;
+}
+function OptionImage({ option }: { option: Option }) { return <span className={styles.optionImage}><ResilientImage src={option.image_url} surface="employee-meal" fallbackLabel="Meal image unavailable" alt={`${option.title} meal`} fill sizes="(max-width: 600px) 90vw, 260px"/></span>; }
+function formatDate(value: string) { return new Date(`${value}T00:00:00`).toLocaleDateString("en-BD", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); }
+function formatCutoff(value: string) { return new Date(value).toLocaleTimeString("en-BD", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit" }); }

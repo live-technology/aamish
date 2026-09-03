@@ -3,6 +3,7 @@
 import { MessageCircle, Mic, Send, Square, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { FeedbackCategory } from "@/lib/feedback";
+import { formatRecordingTime, recordingTime } from "@/lib/recording-timer";
 
 type UploadedAudio = { publicId: string; url: string; durationSeconds: number };
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
@@ -25,10 +26,6 @@ async function uploadAudio(file: File, durationSeconds: number): Promise<Uploade
   return { publicId: data.public_id, url: data.secure_url, durationSeconds };
 }
 
-function formatDuration(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
 export function FeedbackWidget() {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>("BUG");
@@ -48,9 +45,9 @@ export function FeedbackWidget() {
   useEffect(() => {
     if (!recording) return;
     const timer = window.setInterval(() => {
-      const elapsed = Math.min(MAX_AUDIO_SECONDS, Math.max(1, Math.ceil((Date.now() - startedAtRef.current) / 1000)));
-      setDuration(elapsed);
-      if (elapsed >= MAX_AUDIO_SECONDS && recorderRef.current?.state === "recording") recorderRef.current.stop();
+      const timerState = recordingTime((Date.now() - startedAtRef.current) / 1000, MAX_AUDIO_SECONDS);
+      setDuration(timerState.elapsed);
+      if (timerState.complete && recorderRef.current?.state === "recording") recorderRef.current.stop();
     }, 500);
     return () => window.clearInterval(timer);
   }, [recording]);
@@ -135,8 +132,8 @@ export function FeedbackWidget() {
       <form onSubmit={submit}>
         <fieldset><legend>Feedback type</legend><div className="feedback-types">{(["BUG", "IDEA", "QUESTION", "OTHER"] as FeedbackCategory[]).map((value) => <button type="button" aria-pressed={category === value} className={category === value ? "selected" : ""} onClick={() => setCategory(value)} key={value}>{value === "BUG" ? "Problem" : value.charAt(0) + value.slice(1).toLowerCase()}</button>)}</div></fieldset>
         <label>Message <small>Optional with voice</small><textarea rows={4} maxLength={4000} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="What did you try? What did you expect?" /></label>
-        <div className="voice-capture"><div><b>Voice note</b><small>Optional · up to 2 minutes</small></div>{recording ? <button className="recording" type="button" onClick={stopRecording}><Square size={14} fill="currentColor" /> Stop {formatDuration(duration)}</button> : !audioFile && <button type="button" onClick={() => void startRecording()}><Mic size={15} /> Record</button>}</div>
-        {audioUrl && <div className="voice-preview"><audio controls src={audioUrl} preload="metadata" /><button type="button" onClick={clearAudio} aria-label="Remove voice note"><Trash2 size={15} /></button></div>}
+        <div className="voice-capture"><div><b>Voice note</b><small>Optional · up to 2 minutes</small></div>{recording ? <button className="recording" type="button" onClick={stopRecording}><Square size={14} fill="currentColor" /> Stop · {formatRecordingTime(MAX_AUDIO_SECONDS - duration)} left</button> : !audioFile && <button type="button" onClick={() => void startRecording()}><Mic size={15} /> Record</button>}</div>
+        {audioUrl && <div className="voice-preview"><audio controls src={audioUrl} preload="metadata" /><small>Recorded {formatRecordingTime(duration)}</small><button type="button" onClick={clearAudio} aria-label="Remove voice note"><Trash2 size={15} /></button></div>}
         {status && <p className={status.startsWith("Feedback received") ? "feedback-status success" : "feedback-status"} role="status">{status}</p>}
         <button className="feedback-submit" disabled={saving || recording} type="submit"><Send size={15} />{saving ? "Sending…" : "Send feedback"}</button>
       </form>
