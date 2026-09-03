@@ -9,6 +9,7 @@ describe("integrated role navigation", () => {
     expect(superAdminNavigation.map((item) => item.href)).toEqual(["/admin", "/admin/organizations", "/admin/menus", "/admin/calendar", "/admin/fulfillment", "/admin/quality", "/admin/feedback"]);
     expect(enterpriseNavigation.map((item) => item.href)).toEqual(["/enterprise", "/enterprise/meals", "/enterprise/people", "/enterprise/reviews"]);
     expect(employeeNavigation.map((item) => item.href)).toEqual(["/employee", "/employee/schedule", "/employee/reviews"]);
+    expect(employeeNavigation.find((item) => item.href === "/employee/reviews")?.label).toBe("Meal Reviews");
     const all = [...superAdminNavigation, ...enterpriseNavigation, ...employeeNavigation].map((item) => item.href);
     expect(new Set(all).size).toBe(all.length);
   });
