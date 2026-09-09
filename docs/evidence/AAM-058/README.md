@@ -32,10 +32,18 @@ A separate database-outage test stopped only the task's isolated PostgreSQL cont
 
 ## Screenshots
 
+### Anchor navigation refinement
+
+Landing anchors use native smooth scrolling only when the visitor has no reduced-motion preference. This preserves fragment URLs, browser history, and interruptible scrolling. The rule is scoped to documents containing the landing page; `/login` was confirmed to retain `scroll-behavior: auto`.
+
+Validated in the rebuilt Docker preview at 1440×1000 and 390×844. The hero CTA was observed mid-transition at scroll position 100.5 before settling at 1902.5, with the request section aligned to the viewport. Mobile offering navigation was observed mid-transition, and the corporate-meal link reached the request section without horizontal overflow. Reduced-motion behavior was checked in the conditional CSS; this browser does not expose preference emulation. All 128 tests, lint, and the production build passed again.
+
 | Evidence | File |
 | --- | --- |
 | Revised landing hero, desktop | [landing-desktop.png](landing-desktop.png) |
 | Revised landing hero, mobile | [landing-mobile.png](landing-mobile.png) |
+| Request destination, desktop | [request-arrival-desktop.png](request-arrival-desktop.png) |
+| Request destination, mobile | [request-arrival-mobile.png](request-arrival-mobile.png) |
 | Mobile submission confirmation | [request-success-mobile.png](request-success-mobile.png) |
 | Mobile failed-save state with retained input | [request-failure-mobile.png](request-failure-mobile.png) |
 | Administrator inbox, desktop | [inbox-desktop.png](inbox-desktop.png) |
