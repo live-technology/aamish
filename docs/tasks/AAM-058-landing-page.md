@@ -1,6 +1,6 @@
 # AAM-058 — Aamish landing page and meal enquiry inbox
 
-Status: implemented; review and target-environment migration pending.
+Status: implemented and owner-approved for protected dev deployment; dev migration applied on 2026-09-09.
 Branch: `feat/AAM-058-landing-page`, based on updated `dev` at `36ba9e3`.
 Task link: this written task description.
 
@@ -10,7 +10,7 @@ The root route redirected to sign-in. Visitors need to understand Corporate Meal
 
 ## Accepted requirements
 
-- English-first landing page with the exact tagline **Meals that feel like from home.**
+- English-first landing page with the headline **Meals that feel like from home,** and supporting line **The taste of home, made by five-star chefs.**
 - Use the owner's four SVG ingredient illustrations from `assets/brand`; no generated/stock food photographs.
 - A typography-led terracotta brand direction with responsive service rows and a prominent enquiry section.
 - No internal-beta/preview wording in the landing-page content. This change does not alter hosting access or release authority.
@@ -55,7 +55,9 @@ The root route redirected to sign-in. Visitors need to understand Corporate Meal
 
 Apply `packages/db/migrations/013_meal_requests.sql` once, after migrations 001–012, to the target Neon branch before deploying the feature. It creates `meal_requests` and `meal_request_rate_limits`; it does not modify existing customer/journey tables. Rollback should disable these routes first; preserve enquiry data rather than dropping populated tables.
 
-Existing `DATABASE_URL`, `SESSION_SECRET`, and Cloudinary settings are reused. No new environment variable is required. A valid `CLOUDINARY_URL` takes precedence; the existing complete split-key configuration also works when that URL is absent. The local QA environment had an invalid URL value, so QA used the existing valid split keys in a task-scoped environment file. No user `.env` file was changed. Target Neon/Vercel variables and databases were not modified.
+Existing `DATABASE_URL`, `SESSION_SECRET`, and Cloudinary settings are reused. No new environment variable is required. A valid `CLOUDINARY_URL` takes precedence; the existing complete split-key configuration also works when that URL is absent. The local QA environment had an invalid URL value, so QA used the existing valid split keys in a task-scoped environment file. No user `.env` file was changed.
+
+On 2026-09-09, migration 013 was applied transactionally to the existing Neon `dev` branch (`br-blue-smoke-azem7zuh`) in project `noisy-bird-65281738`, after checking prerequisite schema through migration 012. Both new tables and their indexes were verified. The Vercel `DATABASE_URL` override scoped to Preview / git branch `dev` was explicitly bound to that database. Vercel Authentication was enabled for Preview deployments. Production configuration and database were not changed.
 
 Microphone capture requires HTTPS or localhost. Uploads remain below the app's 3 MB recording cap; the multipart body adds a maximum 32 KB allowance. Cloudinary-inspected duration allows one second of container/timer overhead. See [Cloudinary authenticated media](https://cloudinary.com/documentation/control_access_to_media) and [audio upload guidance](https://cloudinary.com/documentation/upload_parameters).
 
@@ -63,7 +65,7 @@ Microphone capture requires HTTPS or localhost. Uploads remain below the app's 3
 
 See [AAM-058 evidence](../evidence/AAM-058/README.md) for commands, outcomes, screenshots, manual role steps, and known limits.
 
-Required checks from `apps/web`: `bun test`, `bun run lint`, `bun run build`. Docker image build and isolated application checks are also required. No public deployment or merge into a permanent branch is part of this task.
+Required checks from `apps/web`: `bun test`, `bun run lint`, `bun run build`. Docker image build and isolated application checks are also required. The owner approved merging PR #111 into `dev` and deploying the protected internal preview on 2026-09-09. Public deployment and release to `main` remain out of scope.
 
 ## Out of scope
 
