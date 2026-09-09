@@ -6,7 +6,7 @@ import { superAdminNavigation } from "./super-admin-navigation";
 
 describe("integrated role navigation", () => {
   test("keeps each role on durable, unique routes", () => {
-    expect(superAdminNavigation.map((item) => item.href)).toEqual(["/admin", "/admin/organizations", "/admin/menus", "/admin/calendar", "/admin/fulfillment", "/admin/quality", "/admin/feedback"]);
+    expect(superAdminNavigation.map((item) => item.href)).toEqual(["/admin", "/admin/organizations", "/admin/menus", "/admin/calendar", "/admin/fulfillment", "/admin/quality", "/admin/feedback", "/admin/requests"]);
     expect(enterpriseNavigation.map((item) => item.href)).toEqual(["/enterprise", "/enterprise/meals", "/enterprise/people", "/enterprise/reviews"]);
     expect(employeeNavigation.map((item) => item.href)).toEqual(["/employee", "/employee/schedule", "/employee/reviews"]);
     expect(employeeNavigation.find((item) => item.href === "/employee/reviews")?.label).toBe("Meal Reviews");
@@ -17,7 +17,7 @@ describe("integrated role navigation", () => {
   test("keeps four high-frequency admin destinations beside a More control", () => {
     const groups = mobileNavigationGroups(superAdminNavigation, "/admin");
     expect(groups.direct.map((item) => item.href)).toEqual(["/admin", "/admin/calendar", "/admin/fulfillment", "/admin/quality"]);
-    expect(groups.overflow.map((item) => item.href)).toEqual(["/admin/organizations", "/admin/menus", "/admin/feedback"]);
+    expect(groups.overflow.map((item) => item.href)).toEqual(["/admin/organizations", "/admin/menus", "/admin/feedback", "/admin/requests"]);
   });
 
   test("promotes the active admin destination so its state is always visible", () => {

@@ -4,6 +4,7 @@ import {
   ChartNoAxesColumn,
   LayoutDashboard,
   MessageSquareText,
+  Inbox,
   PackageOpen,
   ShieldCheck,
 } from "lucide-react";
@@ -17,4 +18,5 @@ export const superAdminNavigation: ShellNavigationItem[] = [
   { href: "/admin/fulfillment", label: "Fulfillment", icon: ChartNoAxesColumn, mobilePrimary: true },
   { href: "/admin/quality", label: "Quality", icon: ShieldCheck, mobilePrimary: true },
   { href: "/admin/feedback", label: "Product feedback", icon: MessageSquareText },
+  { href: "/admin/requests", label: "Meal requests", icon: Inbox },
 ];
