@@ -33,8 +33,8 @@ export default function Home() {
       <section className={styles.hero} aria-labelledby="hero-title">
         <div className={styles.heroIngredients} aria-hidden="true"><Ingredient name="onion" className={styles.heroOnion} /><Ingredient name="chilli" className={styles.heroChilli} /><Ingredient name="tomato" className={styles.heroTomato} /><Ingredient name="garlic" className={styles.heroGarlic} /></div>
         <p className={styles.eyebrow}>A LITTLE COMFORT. A LOT OF FLAVOUR.</p>
-        <h1 id="hero-title">Meals that feel<br />like from <em>home.</em></h1>
-        <p className={styles.heroDescription}>The comfort of a familiar meal.<br />For your workdays, your big days, and your people.</p>
+        <h1 id="hero-title">Meals that feel<br />like from <em>home,</em></h1>
+        <p className={styles.heroDescription}>The taste of home, made by five-star chefs.</p>
         <a className={styles.cta} href="#request">Let’s talk food <span><ArrowUpRight size={21} aria-hidden="true" /></span></a>
         <a className={styles.explore} href="#offerings"><ArrowDown size={17} aria-hidden="true" /> A little taste of what we do</a>
         <span className={styles.sideNote}>WITH LOVE, AAMISH</span>
