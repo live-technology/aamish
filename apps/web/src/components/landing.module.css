@@ -22,3 +22,7 @@
 .hero h1{font-size:clamp(58px,7.2vw,108px);max-width:1040px}
 @media(max-width:1120px) and (min-width:761px){.hero h1{font-size:7.5vw}}
 @media(max-width:760px){.hero h1{font-size:clamp(39px,9vw,62px)}}
+
+/* Keep the primary action clear of the headline when it wraps on narrow screens. */
+.hero>.cta{margin-top:28px}
+@media(max-width:760px){.hero>.cta{margin-top:32px}}
