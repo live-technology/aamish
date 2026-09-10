@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { GuestFeedbackForm } from "@/components/guest-feedback-form";
 import { db } from "@/lib/db";
@@ -13,7 +14,7 @@ export default async function GuestFeedbackPage({ params }: { params: Promise<{ 
   const rows = await db()`SELECT name FROM enterprises WHERE id = ${enterpriseId} AND status = 'ACTIVE'`;
   if (!rows.length) notFound();
   return <main id="main" className={styles.page}>
-    <header className={styles.heading}><span className={styles.brand}>AAMISH</span><p>{rows[0].name}</p><h1>A little feedback.<br />A better next meal.</h1><p>Tell us how it tasted. No sign-in needed.</p></header>
+    <header className={styles.heading}><Image className={styles.brand} src="/brand/amish-logo-01.png" alt="Aamish" width={150} height={65} priority /><p>{rows[0].name}</p><h1>A little feedback.<br />A better next meal.</h1><p>Tell us how it tasted. No sign-in needed.</p></header>
     <GuestFeedbackForm enterpriseId={enterpriseId} />
   </main>;
 }
