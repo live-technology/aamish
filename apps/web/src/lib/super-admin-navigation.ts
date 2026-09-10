@@ -19,4 +19,5 @@ export const superAdminNavigation: ShellNavigationItem[] = [
   { href: "/admin/quality", label: "Quality", icon: ShieldCheck, mobilePrimary: true },
   { href: "/admin/feedback", label: "Product feedback", icon: MessageSquareText },
   { href: "/admin/requests", label: "Meal requests", icon: Inbox },
+  { href: "/admin/guest-feedback", label: "Guest feedback", icon: MessageSquareText },
 ];
