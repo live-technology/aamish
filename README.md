@@ -140,3 +140,11 @@ This beta may be deployed only as a protected internal testing environment.
 ## Production readiness
 
 Production deployment is explicitly out of scope right now. Before production, Aamish requires at minimum a security review, production authentication strategy, authorization audit, rate limiting, automated tests, backups and recovery testing, observability, incident procedures, data-retention rules, accessibility review, and operational validation of external integrations.
+
+### Landing-page meal enquiries
+
+The root page accepts a written requirement, a private voice message, or both, plus a mandatory phone number or email. Aamish administrators review these under **Meal requests** (`/admin/requests`) and mark them New, Contacted, or Closed.
+
+Before deploying this feature, apply `packages/db/migrations/013_meal_requests.sql` to the target isolated Neon branch after migrations 001–012. Configure the existing `DATABASE_URL`, `SESSION_SECRET`, and either a valid `CLOUDINARY_URL` or the complete legacy Cloudinary split keys with `CLOUDINARY_URL` absent. No new environment variables are required. Text enquiries work without media configuration; voice enquiries need Cloudinary. Recordings are authenticated assets and are streamed through administrator-only app routes.
+
+Microphone capture requires HTTPS or localhost. Voice messages are limited to two minutes and 3 MB; requirement text is limited to 4,000 characters. Failed saves preserve the form for retry. The application-wide enquiry limit is 100 attempts per 10 minutes; each contact may submit five accepted enquiries per hour. Before broad public traffic, complete device microphone validation and define enquiry retention/media housekeeping as recorded in [AAM-058](docs/tasks/AAM-058-landing-page.md).
