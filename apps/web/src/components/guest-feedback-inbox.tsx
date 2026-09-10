@@ -10,7 +10,7 @@ import { superAdminNavigation } from "@/lib/super-admin-navigation";
 import { enterpriseNavigation } from "@/lib/enterprise-navigation";
 import { AppShell } from "@/components/ui/app-shell";
 import { EmptyState, ErrorState, PageHeader } from "@/components/ui/primitives";
-import { GuestFeedbackLink, RefreshGuestFeedback } from "./guest-feedback-link";
+import { GuestFeedbackTools, RefreshGuestFeedback } from "./guest-feedback-link";
 import styles from "./guest-feedback.module.css";
 
 type Row = { id: string; enterprise_id: string; enterprise_name: string; rating: number; review: string | null; anonymous: boolean; name: string | null; phone: string | null; created_at: string; has_audio: boolean };
@@ -41,13 +41,11 @@ export async function GuestFeedbackInbox({ searchParams, workspace }: { searchPa
     failureId = crypto.randomUUID();
     log("guest_feedback.inbox_failed", { requestId: failureId });
   }
-  const selectedEnterprise = enterprises.find(item => item.id === enterpriseId);
   const pageUrl = (value: number) => `${path}?${new URLSearchParams({ page: String(value), ...(enterpriseId ? { enterprise: enterpriseId } : {}) })}`;
   return <AppShell workspace={workspace === "admin" ? "Aamish admin" : enterprises[0]?.name || "Enterprise"} fullName={session.fullName} roleLabel={workspace === "admin" ? "Aamish administrator" : "Enterprise administrator"} currentPath={path} navigation={workspace === "admin" ? superAdminNavigation : enterpriseNavigation}>
     <PageHeader title="Guest feedback" description="Ratings and reviews from your enterprise feedback links." actions={<RefreshGuestFeedback />} />
     {failureId ? <ErrorState title="Couldn’t load guest feedback" description="Please refresh to try again." requestId={failureId} /> : <>
-      {workspace === "admin" && <form action={path} className={styles.share}><label>Enterprise<select name="enterprise" defaultValue={enterpriseId || ""}><option value="">All enterprises</option>{enterprises.map(item => <option key={item.id} value={item.id}>{item.name}{item.status !== "ACTIVE" ? " (inactive)" : ""}</option>)}</select></label><button type="submit">View feedback</button></form>}
-      {selectedEnterprise?.status === "ACTIVE" && <GuestFeedbackLink key={selectedEnterprise.id} enterpriseId={selectedEnterprise.id} />}
+      <GuestFeedbackTools enterprises={enterprises} selectedId={enterpriseId} canSelect={workspace === "admin"} />
       <div className={styles.inbox}>{rows.length ? rows.slice(0, 25).map(row => <article className={styles.reviewCard} key={row.id}>
         <header><div><h2>{row.enterprise_name}</h2><small>{new Date(row.created_at).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", dateStyle: "medium", timeStyle: "short" })} · Dhaka time</small></div><span className={styles.score} aria-label={`${row.rating} out of 5 stars`}>{"★".repeat(row.rating)}{"☆".repeat(5 - row.rating)} · {row.rating}/5</span></header>
         <p><strong>{row.anonymous ? "Anonymous" : row.name || "Guest"}</strong>{!row.anonymous && row.phone ? <> · <a href={`tel:${row.phone}`}>{row.phone}</a></> : null}</p>
