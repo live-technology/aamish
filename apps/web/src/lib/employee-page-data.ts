@@ -11,7 +11,7 @@ export async function employeePageData() {
   if (session.role === "ENTERPRISE_ADMIN") redirect("/enterprise");
   if (!session.employeeId || !session.enterpriseId) redirect("/login");
   const [profile, schedules] = await Promise.all([
-    db()<{ enterprise_name: string }[]>`SELECT name AS enterprise_name FROM enterprises WHERE id=${session.enterpriseId}`,
+    db()<{ enterprise_name: string; logo_url: string | null }[]>`SELECT name AS enterprise_name, logo_url FROM enterprises WHERE id=${session.enterpriseId}`,
     db()<EmployeeSchedule[]>`
       SELECT ms.id,ms.schedule_date::text,ms.cutoff_time::text,ms.status,
         COALESCE(mp.is_opted_in,FALSE) AS is_opted_in,mp.selected_option_id,dl.name AS location_name,
@@ -33,5 +33,5 @@ export async function employeePageData() {
       ORDER BY ms.schedule_date DESC
     `,
   ]);
-  return { fullName: session.fullName, enterpriseName: profile[0]?.enterprise_name || "Enterprise", schedules: [...schedules] };
+  return { enterpriseLogoUrl: profile[0]?.logo_url || null, fullName: session.fullName, enterpriseName: profile[0]?.enterprise_name || "Enterprise", schedules: [...schedules] };
 }

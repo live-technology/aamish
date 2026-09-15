@@ -16,6 +16,7 @@ import {
 } from "@/lib/enterprise-onboarding";
 import { superAdminNavigation } from "@/lib/super-admin-navigation";
 import { useModalDialog } from "@/lib/use-modal-dialog";
+import { EnterpriseLogoField } from "./enterprise-logo-field";
 import styles from "./admin-experience.module.css";
 
 export type Enterprise = EditableEnterprise;
@@ -31,13 +32,14 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<RequestFailure | null>(null);
   const [created, setCreated] = useState<CreatedEnterprise | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [usernameEdited, setUsernameEdited] = useState(false);
   const [editing, setEditing] = useState<EditableEnterprise | null>(null);
   const currentStep = enterpriseSteps[stepIndex];
 
-  const dialogRef = useModalDialog<HTMLElement>(open, closeDialog, saving);
+  const dialogRef = useModalDialog<HTMLElement>(open, closeDialog, saving || uploadingLogo);
 
   function openDialog() {
     setOpen(true);
@@ -50,6 +52,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
   }
 
   function closeDialog() {
+    if (saving || uploadingLogo) return;
     setOpen(false);
     setCreated(null);
     setFailure(null);
@@ -103,6 +106,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving || uploadingLogo) return;
     if (currentStep.id !== "review") { advance(); return; }
     const validation = validateEnterpriseStep("review", draft);
     if (Object.keys(validation).length > 0) {
@@ -120,6 +124,7 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: draft.name,
+          logoUrl: draft.logoUrl,
           pocName: draft.pocName,
           pocPhone: draft.pocPhone,
           pocEmail: draft.pocEmail,
@@ -164,12 +169,12 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
     </>}
 
     {open && <div className={styles.dialogBackdrop} style={{ zIndex: 80 }}><section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="enterprise-dialog-title" tabIndex={-1}>
-      <header className={styles.dialogHeader}><div><p>New enterprise</p><h2 id="enterprise-dialog-title">Set up an enterprise</h2><span>Required fields are marked with <b>*</b>.</span></div><IconButton type="button" aria-label="Close enterprise setup" onClick={closeDialog} disabled={saving}><X size={19} /></IconButton></header>
+      <header className={styles.dialogHeader}><div><p>New enterprise</p><h2 id="enterprise-dialog-title">Set up an enterprise</h2><span>Required fields are marked with <b>*</b>.</span></div><IconButton type="button" aria-label="Close enterprise setup" onClick={closeDialog} disabled={saving || uploadingLogo}><X size={19} /></IconButton></header>
 
       {created ? <SuccessHandoff created={created} copyUsername={copyUsername} close={closeDialog} /> : <form className={styles.dialogForm} onSubmit={submit}>
         <ol className={styles.stepper} aria-label="Enterprise setup progress">{enterpriseSteps.map((step, index) => <li className={index === stepIndex ? styles.stepActive : index < stepIndex ? styles.stepComplete : ""} aria-current={index === stepIndex ? "step" : undefined} key={step.id}><span>{index < stepIndex ? <Check size={14} /> : index + 1}</span><b>{step.label}</b></li>)}</ol>
-        <div className={styles.dialogBody}>{currentStep.id === "company" ? <CompanyStep draft={draft} errors={errors} update={update} updateName={updateName} /> : currentStep.id === "locations" ? <LocationsStep draft={draft} errors={errors} updateLocation={updateLocation} addLocation={addLocation} removeLocation={removeLocation} /> : currentStep.id === "administrator" ? <AdministratorStep draft={draft} errors={errors} update={update} setUsernameEdited={setUsernameEdited} /> : <ReviewStep draft={draft} />}{failure && <Alert tone="danger" title="Enterprise was not created">{failure.message}{failure.requestId && <code>Request ID: {failure.requestId}</code>}</Alert>}</div>
-        <footer className={styles.dialogFooter}><Button type="button" variant="secondary" onClick={stepIndex === 0 ? closeDialog : () => { setFailure(null); setStepIndex((current) => current - 1); }} disabled={saving}>{stepIndex === 0 ? "Cancel" : <><ChevronLeft size={16} />Back</>}</Button><Button type="submit" loading={saving} loadingLabel="Creating enterprise…">{currentStep.id === "review" ? "Create enterprise" : <>Continue<ChevronRight size={16} /></>}</Button></footer>
+        <div className={styles.dialogBody}>{currentStep.id === "company" ? <CompanyStep draft={draft} errors={errors} update={update} updateName={updateName} onLogoBusyChange={setUploadingLogo} /> : currentStep.id === "locations" ? <LocationsStep draft={draft} errors={errors} updateLocation={updateLocation} addLocation={addLocation} removeLocation={removeLocation} /> : currentStep.id === "administrator" ? <AdministratorStep draft={draft} errors={errors} update={update} setUsernameEdited={setUsernameEdited} /> : <ReviewStep draft={draft} />}{failure && <Alert tone="danger" title="Enterprise was not created">{failure.message}{failure.requestId && <code>Request ID: {failure.requestId}</code>}</Alert>}</div>
+        <footer className={styles.dialogFooter}><Button type="button" variant="secondary" onClick={stepIndex === 0 ? closeDialog : () => { setFailure(null); setStepIndex((current) => current - 1); }} disabled={saving || uploadingLogo}>{stepIndex === 0 ? "Cancel" : <><ChevronLeft size={16} />Back</>}</Button><Button type="submit" disabled={uploadingLogo} loading={saving} loadingLabel="Creating enterprise…">{currentStep.id === "review" ? "Create enterprise" : <>Continue<ChevronRight size={16} /></>}</Button></footer>
       </form>}
     </section></div>}
     {editing && <EnterpriseEditor key={editing.id} enterprise={editing} onClose={() => setEditing(null)} onSaved={loadEnterprises} />}
@@ -177,8 +182,8 @@ export function AdminOnboarding({ fullName, initialEnterprises, startOpen = fals
   </AppShell>;
 }
 
-export function CompanyStep({ draft, errors, update, updateName }: { draft: EnterpriseDraft; errors: Record<string, string>; update: <K extends keyof EnterpriseDraft>(field: K, value: EnterpriseDraft[K]) => void; updateName: (name: string) => void }) {
-  return <section className={styles.stepContent}><div className={styles.stepHeading}><span>1 of 4</span><h3>Company details</h3><p>Who should Aamish contact about this enterprise?</p></div><div className={styles.fieldGrid}><TextField autoFocus label="Enterprise name" name="name" value={draft.name} onChange={(event) => updateName(event.target.value)} placeholder="e.g. Live Technologies" error={errors.name} required /><TextField label="Primary contact" name="pocName" value={draft.pocName} onChange={(event) => update("pocName", event.target.value)} placeholder="Full name" error={errors.pocName} required /><TextField label="Contact phone" name="pocPhone" value={draft.pocPhone} onChange={(event) => update("pocPhone", event.target.value)} placeholder="+880…" error={errors.pocPhone} required /><TextField label="Contact email" name="pocEmail" type="email" value={draft.pocEmail} onChange={(event) => update("pocEmail", event.target.value)} placeholder="admin@company.com" error={errors.pocEmail} required /></div><p className={styles.generatedNote}>The enterprise URL is generated automatically from its name.</p></section>;
+export function CompanyStep({ draft, errors, update, updateName, onLogoBusyChange }: { onLogoBusyChange?: (busy: boolean) => void; draft: EnterpriseDraft; errors: Record<string, string>; update: <K extends keyof EnterpriseDraft>(field: K, value: EnterpriseDraft[K]) => void; updateName: (name: string) => void }) {
+  return <section className={styles.stepContent}><div className={styles.stepHeading}><span>1 of 4</span><h3>Company details</h3><p>Who should Aamish contact about this enterprise?</p></div><div className={styles.fieldGrid}><TextField autoFocus label="Enterprise name" name="name" value={draft.name} onChange={(event) => updateName(event.target.value)} placeholder="e.g. Live Technologies" error={errors.name} required /><TextField label="Primary contact" name="pocName" value={draft.pocName} onChange={(event) => update("pocName", event.target.value)} placeholder="Full name" error={errors.pocName} required /><TextField label="Contact phone" name="pocPhone" value={draft.pocPhone} onChange={(event) => update("pocPhone", event.target.value)} placeholder="+880…" error={errors.pocPhone} required /><TextField label="Contact email" name="pocEmail" type="email" value={draft.pocEmail} onChange={(event) => update("pocEmail", event.target.value)} placeholder="admin@company.com" error={errors.pocEmail} required /></div><EnterpriseLogoField value={draft.logoUrl} onChange={value => update("logoUrl", value)} onBusyChange={onLogoBusyChange} /><p className={styles.generatedNote}>The enterprise URL is generated automatically from its name.</p></section>;
 }
 
 function LocationsStep({ draft, errors, updateLocation, addLocation, removeLocation }: { draft: EnterpriseDraft; errors: Record<string, string>; updateLocation: (index: number, field: "name" | "code" | "address", value: string) => void; addLocation: () => void; removeLocation: (index: number) => void }) {

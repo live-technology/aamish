@@ -11,7 +11,7 @@ export default async function OrganizationsPage({ searchParams }: { searchParams
   if (session.role !== "SUPER_ADMIN") redirect(session.role === "ENTERPRISE_ADMIN" ? "/enterprise" : "/employee");
 
   const enterprises = await db()<EditableEnterprise[]>`
-    SELECT e.id, e.name, e.slug, e.status, e.poc_name, e.poc_phone, e.poc_email,
+    SELECT e.id, e.name, e.logo_url, e.slug, e.status, e.poc_name, e.poc_phone, e.poc_email,
       COUNT(DISTINCT dl.id)::int AS location_count,
       COUNT(DISTINCT ea.id)::int AS admin_count,
       MIN(au.username) AS admin_username,

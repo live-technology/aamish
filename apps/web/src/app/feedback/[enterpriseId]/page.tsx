@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { FeedbackHeading } from "@/components/feedback-heading";
 import { notFound } from "next/navigation";
 import { GuestFeedbackForm } from "@/components/guest-feedback-form";
 import { db } from "@/lib/db";
@@ -11,10 +11,10 @@ export const metadata = { title: "Share your feedback | Aamish", robots: { index
 export default async function GuestFeedbackPage({ params }: { params: Promise<{ enterpriseId: string }> }) {
   const { enterpriseId } = await params;
   if (!isRequestId(enterpriseId)) notFound();
-  const rows = await db()`SELECT name FROM enterprises WHERE id = ${enterpriseId} AND status = 'ACTIVE'`;
+  const rows = await db()`SELECT name, logo_url FROM enterprises WHERE id = ${enterpriseId} AND status = 'ACTIVE'`;
   if (!rows.length) notFound();
   return <main id="main" className={styles.page}>
-    <header className={styles.heading}><Image className={styles.brand} src="/brand/amish-logo-01.png" alt="Aamish" width={150} height={65} priority /><p>{rows[0].name}</p><h1>A little feedback.<br />A better next meal.</h1><p>Tell us how it tasted. No sign-in needed.</p></header>
+    <FeedbackHeading enterpriseName={rows[0].name} logoUrl={rows[0].logo_url} />
     <GuestFeedbackForm enterpriseId={enterpriseId} />
   </main>;
 }

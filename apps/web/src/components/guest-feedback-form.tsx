@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, Mic, Square, Star, Trash2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Mic, Square, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button, TextAreaField, TextField } from "@/components/ui/primitives";
 import { MAX_REQUIREMENT_LENGTH, MAX_VOICE_BYTES, MAX_VOICE_SECONDS } from "@/lib/meal-requests";
 import { validateGuestFeedback } from "@/lib/guest-feedback";
+import { FeedbackRating } from "./feedback-rating";
 import styles from "./guest-feedback.module.css";
 
 export function GuestFeedbackForm({ enterpriseId }: { enterpriseId: string }) {
@@ -131,7 +132,7 @@ export function GuestFeedbackForm({ enterpriseId }: { enterpriseId: string }) {
     if (!anonymous) { body.set("name", name); body.set("phone", phone); }
     try { validateGuestFeedback(body); } catch (failure) {
       setError((failure as Error).message);
-      document.getElementById(rating ? "phone" : "rating-1")?.focus();
+      document.getElementById(!rating ? "rating-5" : !anonymous && !name.trim() ? "name" : "phone")?.focus();
       return;
     }
     busyRef.current = true; setBusy(true);
@@ -151,16 +152,7 @@ export function GuestFeedbackForm({ enterpriseId }: { enterpriseId: string }) {
   if (success) return <div className={`${styles.requestForm} ${styles.success}`} role="status"><CheckCircle2 size={43} aria-hidden="true" /><h2 ref={successHeading} tabIndex={-1}>Thank you for your feedback!</h2><p>Your review has been sent to the team.</p></div>;
 
   return <form className={styles.requestForm} onSubmit={submit} noValidate aria-label="Guest feedback" aria-busy={busy}>
-    <fieldset className={styles.rating} disabled={busy}>
-      <legend>How was your meal? <span aria-hidden="true">*</span></legend>
-      <div className={styles.stars}>
-        {[1, 2, 3, 4, 5].map(value => <label key={value} className={rating >= value ? styles.selected : undefined}>
-          <input id={`rating-${value}`} type="radio" name="rating" value={value} required checked={rating === value} onChange={() => { setRating(value); changed(); }} aria-label={`${value} ${value === 1 ? "star" : "stars"}`} />
-          <Star size={34} aria-hidden="true" /><span>{value}</span>
-        </label>)}
-      </div>
-      <p aria-live="polite">{rating ? ["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating] : "Choose 1–5 stars"}</p>
-    </fieldset>
+    <FeedbackRating value={rating} onChange={value => { setRating(value); changed(); }} disabled={busy} />
     <TextAreaField name="review" label="Your review" description="Optional — tell us what you enjoyed or what could be better." rows={4} maxLength={MAX_REQUIREMENT_LENGTH} value={requirement} onChange={event => { setRequirement(event.target.value); changed(); }} disabled={busy} placeholder="We’d love to hear your thoughts…" />
     <div className={styles.voiceRow}>
       {recording ? <button type="button" className={styles.recording} onClick={stop}><Square size={16} fill="currentColor" aria-hidden="true" /> Stop recording · {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</button> : <button type="button" onClick={() => { if (preparing) { microphoneAttempt.current++; setPreparing(false); } else void start(); }} disabled={busy || finishing}><Mic size={18} aria-hidden="true" />{preparing ? "Cancel microphone request" : finishing ? "Preparing recording…" : audio ? "Re-record voice message" : "Add a voice message"}</button>}
@@ -168,11 +160,12 @@ export function GuestFeedbackForm({ enterpriseId }: { enterpriseId: string }) {
     </div>
     {audio && <div className={styles.audioPreview}><audio controls src={audio.url} preload="metadata" aria-label="Preview your voice message" /><button type="button" aria-label="Remove voice message" disabled={busy} onClick={() => { setAudio(null); changed(); }}><Trash2 size={17} aria-hidden="true" /></button></div>}
     <div className={styles.identity}>
+      <div className={styles.fields}>
+        <TextField name="name" label="Name" required={!anonymous} maxLength={100} autoComplete="name" value={name} onChange={event => { setName(event.target.value); changed(); }} disabled={busy || anonymous} />
+        <TextField name="phone" label="Phone" required={!anonymous} type="tel" maxLength={50} autoComplete="tel" value={phone} onChange={event => { setPhone(event.target.value); changed(); }} disabled={busy || anonymous} />
+      </div>
       <label className={styles.anonymous}><input type="checkbox" checked={anonymous} disabled={busy} onChange={event => { setAnonymous(event.target.checked); setName(""); setPhone(""); changed(); }} />Stay anonymous</label>
-      {anonymous ? <p>Your name and phone number won’t be included. Avoid identifying yourself in your review or recording if you prefer to stay anonymous.</p> : <div className={styles.fields}>
-        <TextField name="name" label="Name (optional)" maxLength={100} autoComplete="name" value={name} onChange={event => { setName(event.target.value); changed(); }} disabled={busy} />
-        <TextField name="phone" label="Phone (optional)" type="tel" maxLength={50} autoComplete="tel" value={phone} onChange={event => { setPhone(event.target.value); changed(); }} disabled={busy} />
-      </div>}
+      {anonymous && <p>Your name and phone number won’t be included. Avoid identifying yourself in your review or recording if you prefer to stay anonymous.</p>}
     </div>
     {error && <p className={styles.formError} role="alert">{error}</p>}
     <Button className={styles.submit} type="submit" loading={busy} loadingLabel={audio ? "Sending your voice message…" : "Sending your feedback…"} disabled={recording || preparing || finishing}>Submit feedback <ArrowUpRight size={21} aria-hidden="true" /></Button>

@@ -1,6 +1,6 @@
 export type EnterpriseLocationRecord = { id: string; name: string; code: string; address: string; is_active: boolean };
-export type EditableEnterprise = { id:string;name:string;slug:string;status:string;poc_name:string;poc_phone:string;poc_email:string;location_count:number;admin_count:number;admin_username?:string|null;locations:EnterpriseLocationRecord[] };
-export type EnterpriseEditPayload = { id:string;name:string;pocName:string;pocPhone:string;pocEmail:string;status:string;locations:Array<{id?:string;name:string;code:string;address:string;isActive:boolean}> };
+export type EditableEnterprise = { logo_url?: string|null; id:string;name:string;slug:string;status:string;poc_name:string;poc_phone:string;poc_email:string;location_count:number;admin_count:number;admin_username?:string|null;locations:EnterpriseLocationRecord[] };
+export type EnterpriseEditPayload = { logoUrl?: string|null; id:string;name:string;pocName:string;pocPhone:string;pocEmail:string;status:string;locations:Array<{id?:string;name:string;code:string;address:string;isActive:boolean}> };
 
 export function validateEnterpriseEdit(value: EnterpriseEditPayload) {
   if (!value.id || !value.name.trim() || !value.pocName.trim() || !value.pocPhone.trim() || !/^\S+@\S+\.\S+$/.test(value.pocEmail.trim())) return "MISSING_REQUIRED_FIELDS";

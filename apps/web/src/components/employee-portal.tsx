@@ -21,7 +21,7 @@ export type EmployeeSchedule = {
   review_voice_public_id: string | null; review_voice_url: string | null; review_voice_duration_seconds: number | null;
 };
 
-export function EmployeePortal({ fullName, enterpriseName, schedules: initialSchedules, view }: { fullName: string; enterpriseName: string; schedules: EmployeeSchedule[]; view: "today" | "schedule" | "reviews" }) {
+export function EmployeePortal({ fullName, enterpriseName, enterpriseLogoUrl, schedules: initialSchedules, view }: { fullName: string; enterpriseName: string; enterpriseLogoUrl?: string | null; schedules: EmployeeSchedule[]; view: "today" | "schedule" | "reviews" }) {
   const [schedules, setSchedules] = useState(initialSchedules);
   const [message, setMessage] = useState("");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
@@ -39,7 +39,7 @@ export function EmployeePortal({ fullName, enterpriseName, schedules: initialSch
   return <AppShell workspace={enterpriseName} fullName={fullName} roleLabel="Employee" currentPath={path} navigation={employeeNavigation}>
     {view === "today" && <TodayMeal schedule={active} today={today} updatePreference={updatePreference} />}
     {view === "schedule" && <MealCalendar schedules={schedules} today={today} updatePreference={updatePreference} />}
-    {view === "reviews" && <EmployeeReviewWorkspace schedules={schedules} today={today} onSaved={(scheduleId, review) => setSchedules((current) => current.map((item) => item.id === scheduleId ? { ...item, ...review } : item))} />}
+    {view === "reviews" && <EmployeeReviewWorkspace enterpriseName={enterpriseName} enterpriseLogoUrl={enterpriseLogoUrl} schedules={schedules} today={today} onSaved={(scheduleId, review) => setSchedules((current) => current.map((item) => item.id === scheduleId ? { ...item, ...review } : item))} />}
     {message && view !== "reviews" && <div className={styles.message}><Alert tone="info" title="Meal preference">{message}</Alert></div>}
   </AppShell>;
 }

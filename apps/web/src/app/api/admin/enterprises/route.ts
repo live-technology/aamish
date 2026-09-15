@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentSession } from "@/lib/auth";
+import { cloudinaryConfig } from "@/lib/cloudinary";
+import { validEnterpriseLogoUrl } from "@/lib/enterprise-logo";
 import { db } from "@/lib/db";
 import { log, logError } from "@/lib/logger";
 import { assignLocationCodes, nextAvailableEnterpriseSlug, slugifyEnterpriseName, validateEnterpriseStep, type EnterpriseDraft } from "@/lib/enterprise-onboarding";
@@ -11,7 +13,7 @@ export async function GET() {
   if (session?.role !== "SUPER_ADMIN") return NextResponse.json({ error: "FORBIDDEN", requestId }, { status: 403 });
   try {
     const enterprises = await db()`
-      SELECT e.id, e.name, e.slug, e.status, e.poc_name, e.poc_phone, e.poc_email,
+      SELECT e.id, e.name, e.logo_url, e.slug, e.status, e.poc_name, e.poc_phone, e.poc_email,
         COUNT(DISTINCT dl.id)::int AS location_count,
         COUNT(DISTINCT ea.id)::int AS admin_count,
         MIN(au.username) AS admin_username,
@@ -58,7 +60,7 @@ export async function PATCH(request: NextRequest) {
         if (location.id) await transaction`UPDATE delivery_locations SET name=${location.name.trim()},address=${location.address.trim()},is_active=${location.isActive} WHERE id=${location.id} AND enterprise_id=${payload.id}`;
         else { const code=generatedCodes[newLocationIndex++]; await transaction`INSERT INTO delivery_locations(enterprise_id,name,code,address,is_active) VALUES(${payload.id},${location.name.trim()},${code},${location.address.trim()},${location.isActive})`; }
       }
-      await transaction`UPDATE enterprises SET name=${payload.name.trim()},poc_name=${payload.pocName.trim()},poc_phone=${payload.pocPhone.trim()},poc_email=${payload.pocEmail.trim()},status=${payload.status},updated_at=NOW() WHERE id=${payload.id}`;
+      await transaction`UPDATE enterprises SET name=${payload.name.trim()},poc_name=${payload.pocName.trim()},poc_phone=${payload.pocPhone.trim()},poc_email=${payload.pocEmail.trim()},status=${payload.status},logo_url=CASE WHEN ${payload.logoUrl !== undefined} THEN ${payload.logoUrl ?? null} ELSE logo_url END,updated_at=NOW() WHERE id=${payload.id}`;
       return { enterpriseId: payload.id, locations: payload.locations.length };
     });
     log("enterprise.updated", { requestId, actorUserId: session.userId, ...result });
@@ -90,8 +92,8 @@ export async function POST(request: NextRequest) {
       `;
       const slug = nextAvailableEnterpriseSlug(draft.name, existingSlugs.map((item) => item.slug));
       const enterprises = await transaction<{ id: string }[]>`
-        INSERT INTO enterprises (name, slug, poc_name, poc_phone, poc_email)
-        VALUES (${draft.name.trim()}, ${slug}, ${draft.pocName.trim()}, ${draft.pocPhone.trim()}, ${draft.pocEmail.trim()}) RETURNING id
+        INSERT INTO enterprises (name, slug, poc_name, poc_phone, poc_email, logo_url)
+        VALUES (${draft.name.trim()}, ${slug}, ${draft.pocName.trim()}, ${draft.pocPhone.trim()}, ${draft.pocEmail.trim()}, ${draft.logoUrl ?? null}) RETURNING id
       `;
       const enterpriseId = enterprises[0].id;
       const locationCodes = assignLocationCodes(draft.locations.map((location) => location.name));
@@ -120,12 +122,14 @@ export async function POST(request: NextRequest) {
 function enterpriseDraft(body: unknown): EnterpriseDraft | null {
   if (!body || typeof body !== "object") return null;
   const value = body as Record<string, unknown>;
+  if (value.logoUrl !== undefined && value.logoUrl !== null && !validEnterpriseLogoUrl(value.logoUrl, cloudinaryConfig()?.cloudName ?? "")) return null;
   const admin = value.admin && typeof value.admin === "object" ? value.admin as Record<string, unknown> : null;
   if (!admin || !Array.isArray(value.locations) || !value.locations.every((location) => location && typeof location === "object")) return null;
   const locations = value.locations.map((location) => location as Record<string, unknown>);
   const strings = [value.name, value.pocName, value.pocPhone, value.pocEmail, admin.fullName, admin.username, admin.password, ...locations.flatMap((location) => [location.name, location.address])];
   if (!strings.every((item) => typeof item === "string")) return null;
   return {
+    logoUrl: value.logoUrl as string | null | undefined,
     name: value.name as string,
     pocName: value.pocName as string,
     pocPhone: value.pocPhone as string,
@@ -144,10 +148,11 @@ function isUniqueViolation(error: unknown): error is { code: "23505"; constraint
 function enterpriseEditPayload(body: unknown): EnterpriseEditPayload | null {
   if (!body || typeof body !== "object") return null;
   const value = body as Record<string, unknown>;
+  if (value.logoUrl !== undefined && value.logoUrl !== null && !validEnterpriseLogoUrl(value.logoUrl, cloudinaryConfig()?.cloudName ?? "")) return null;
   if (!Array.isArray(value.locations) || !value.locations.every((item) => item && typeof item === "object")) return null;
   const strings = [value.id,value.name,value.pocName,value.pocPhone,value.pocEmail,value.status];
   if (!strings.every((item) => typeof item === "string")) return null;
   const locations = value.locations.map((item) => item as Record<string, unknown>);
   if (!locations.every((item) => (item.id === undefined || typeof item.id === "string") && (item.code === undefined || typeof item.code === "string") && [item.name,item.address].every((field) => typeof field === "string") && typeof item.isActive === "boolean")) return null;
-  return { id:value.id as string,name:value.name as string,pocName:value.pocName as string,pocPhone:value.pocPhone as string,pocEmail:value.pocEmail as string,status:value.status as string,locations:locations.map((item) => ({id:item.id as string|undefined,name:item.name as string,code:typeof item.code === "string" ? item.code : "",address:item.address as string,isActive:item.isActive as boolean})) };
+  return { logoUrl:value.logoUrl as string|null|undefined, id:value.id as string,name:value.name as string,pocName:value.pocName as string,pocPhone:value.pocPhone as string,pocEmail:value.pocEmail as string,status:value.status as string,locations:locations.map((item) => ({id:item.id as string|undefined,name:item.name as string,code:typeof item.code === "string" ? item.code : "",address:item.address as string,isActive:item.isActive as boolean})) };
 }
