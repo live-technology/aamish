@@ -3,11 +3,11 @@
 import styles from "./feedback-rating.module.css";
 
 export const feedbackRatings = [
-  { value: 5, emoji: "🤩", label: "Amazing" },
-  { value: 4, emoji: "😋", label: "Tasty" },
-  { value: 3, emoji: "🙂", label: "Okay" },
-  { value: 2, emoji: "😕", label: "Not great" },
   { value: 1, emoji: "😞", label: "Disappointed" },
+  { value: 2, emoji: "😕", label: "Not great" },
+  { value: 3, emoji: "🙂", label: "Okay" },
+  { value: 4, emoji: "😋", label: "Tasty" },
+  { value: 5, emoji: "🤩", label: "Amazing" },
 ] as const;
 
 export function FeedbackRating({ value, onChange, disabled = false }: { value: number; onChange: (value: number) => void; disabled?: boolean }) {
