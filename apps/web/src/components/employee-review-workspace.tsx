@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CalendarDays, Flag, Mic, Search, Square, Star, Trash2, Upload } from "lucide-react";
+import { CalendarDays, Flag, Mic, Search, Square, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { EmployeeSchedule } from "@/components/employee-portal";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -10,6 +10,8 @@ import { clientErrorMessage, validateImage } from "@/lib/client-errors";
 import { mealsForHistory } from "@/lib/employee-meals";
 import { formatRecordingTime, recordingTime } from "@/lib/recording-timer";
 import { reviewIsEditable, type ReviewPhoto, type ReviewVoice } from "@/lib/reviews";
+import { FeedbackHeading } from "./feedback-heading";
+import { FeedbackRating } from "./feedback-rating";
 import styles from "./employee-experience.module.css";
 
 const MAX_VOICE_SECONDS = 60;
@@ -32,7 +34,7 @@ async function uploadPhoto(file: File): Promise<ReviewPhoto> {
   return { publicId: data.public_id, url: data.secure_url, thumbnailUrl: data.secure_url.replace("/upload/", "/upload/c_fill,w_320,h_240,q_auto,f_auto/") };
 }
 
-export function EmployeeReviewWorkspace({ schedules, today, onSaved }: { schedules: EmployeeSchedule[]; today: string; onSaved: (scheduleId: string, review: Partial<EmployeeSchedule>) => void }) {
+export function EmployeeReviewWorkspace({ schedules, today, onSaved, enterpriseName = "", enterpriseLogoUrl }: { enterpriseName?: string; enterpriseLogoUrl?: string | null; schedules: EmployeeSchedule[]; today: string; onSaved: (scheduleId: string, review: Partial<EmployeeSchedule>) => void }) {
   const history = useMemo(() => schedules.filter((item) => item.schedule_date <= today).sort((a, b) => b.schedule_date.localeCompare(a.schedule_date)), [schedules, today]);
   const initialTarget = history.find((item) => item.can_review) || history[0];
   const [selectedId, setSelectedId] = useState(initialTarget?.id || "");
@@ -155,9 +157,10 @@ export function EmployeeReviewWorkspace({ schedules, today, onSaved }: { schedul
         <div className={styles.reviewHistory}>{filteredHistory.map((item) => { const state = reviewState(item, nowMs); return <button type="button" className={item.id === target?.id ? styles.activeReview : ""} onClick={() => chooseTarget(item)} key={item.id} aria-current={item.id === target?.id ? "true" : undefined}><span><strong>{formatDate(item.schedule_date)}</strong><small>{selectedMeal(item)} · {item.location_name}</small></span><span className={styles.historyStatus}><StatusBadge tone={state.tone}>{state.label}</StatusBadge>{state.detail && <small>{state.detail}</small>}</span></button>; })}{filteredHistory.length === 0 && <div className={styles.noHistoryResults}><strong>No matching meals</strong><span>Try a different search or date range.</span></div>}</div>
       </aside>
       {target && !target.can_review ? <Card className={styles.historyDetail}><div className={styles.reviewHeading}><div><p>Meal on {formatDate(target.schedule_date)}</p><h2>{selectedMeal(target)}</h2><span className={styles.detailLocation}>{target.location_name}</span></div><StatusBadge tone="neutral">Skipped</StatusBadge></div><EmptyState icon={<CalendarDays size={24}/>} title="No meal received" description="You skipped this meal, so there is nothing to review."/></Card> : target && <Card className={styles.review}>
+        <FeedbackHeading enterpriseName={enterpriseName} logoUrl={enterpriseLogoUrl} showAamish={false} />
         <div className={styles.reviewHeading}><div><p>Meal on {formatDate(target.schedule_date)}</p><h2>{selectedMeal(target)}</h2><span className={styles.detailLocation}>{target.location_name}</span></div><StatusBadge tone={readOnly || checkingEditWindow ? "neutral" : "info"}>{target.review_id ? checkingEditWindow ? "Checking status…" : readOnly ? "Read only" : editTimeRemaining(target.review_created_at!, nowMs) : "Review anytime"}</StatusBadge></div>
         {target.review_id && target.review_created_at && !checkingEditWindow && <Alert tone={readOnly ? "info" : "warning"} title={readOnly ? "Review history protected" : "Original edit deadline"}>{readOnly ? `The 24-hour edit window closed ${formatTimestamp(new Date(new Date(target.review_created_at).valueOf() + 86_400_000).toISOString())}. This review cannot be changed or deleted.` : `Edits close ${formatTimestamp(new Date(new Date(target.review_created_at).valueOf() + 86_400_000).toISOString())}. Re-submitting does not extend the deadline.`}</Alert>}
-        <fieldset className={styles.stars} disabled={readOnly || checkingEditWindow}><legend>Meal rating</legend>{[1,2,3,4,5].map((value) => <button type="button" aria-label={`${value} stars`} aria-pressed={value === rating} className={value <= rating ? styles.lit : ""} onClick={() => setRating(value)} key={value}><Star size={27} fill="currentColor"/></button>)}</fieldset>
+        <FeedbackRating value={rating} onChange={setRating} disabled={readOnly || checkingEditWindow || busy} />
         <label className={styles.comment}><span>Comments <small>Optional</small></span><textarea disabled={readOnly || checkingEditWindow} value={comment} onChange={(event) => setComment(event.target.value)} placeholder="Taste, portion, hygiene, or packaging notes" rows={4}/></label>
         <div className={styles.photos}>{photos.map((photo) => <span key={photo.publicId}><Image src={photo.thumbnailUrl} alt="Attached meal" width={112} height={84}/>{!readOnly && !checkingEditWindow && <button type="button" aria-label="Remove attached photo" onClick={() => setPhotos((current) => current.filter((item) => item.publicId !== photo.publicId))}><Trash2 size={13}/></button>}</span>)}</div>
         {!readOnly && !checkingEditWindow && <div className={styles.uploadGroup}><label className={styles.upload}><Upload size={16}/>{busy ? "Uploading…" : `Add photos (${photos.length}/5)`}<input type="file" accept="image/png,image/jpeg,image/webp" multiple disabled={busy || photos.length >= 5} onChange={(event) => void addPhotos(event.target.files)}/></label><small>JPG, PNG or WebP · max 10 MB each</small></div>}

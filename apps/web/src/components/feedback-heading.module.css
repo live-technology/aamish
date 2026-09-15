@@ -1,0 +1,7 @@
+.heading { text-align: center; margin-bottom: 24px; }
+.aamishLogo { display: block; width: 132px; height: auto; margin: 0 auto 20px; }
+.enterprise { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 22px; }
+.enterpriseLogo { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; }
+.enterprise .enterpriseName { margin: 0; font-size: 22px; font-weight: 650; line-height: 1.35; color: #284c3b; overflow-wrap: anywhere; }
+.heading h1, .heading h2 { font-size: clamp(26px, 5vw, 36px); line-height: 1.16; letter-spacing: -.035em; margin: 12px 0; }
+.heading .description { font-size: 15px; line-height: 1.5; color: #637067; margin: 12px 0 0; }

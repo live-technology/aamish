@@ -5,6 +5,7 @@ export type EnterpriseLocationDraft = {
 };
 
 export type EnterpriseDraft = {
+  logoUrl?: string | null;
   name: string;
   pocName: string;
   pocPhone: string;
