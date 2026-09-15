@@ -22,7 +22,7 @@ describe("guest feedback", () => {
   });
   test("normalizes contact details and bounds content", () => {
     expect(validateGuestFeedback(form({ rating: "3", name: " Test guest ", phone: "০১৭১২৩৪৫৬৭৮" }))).toMatchObject({ name: "Test guest", phone: "+8801712345678" });
-    for (const input of [{ phone: "bad" }, { phone: "test@example.com" }, { name: "x".repeat(101) }, { review: "x".repeat(4001) }]) expect(() => validateGuestFeedback(form({ rating: "4", ...input }))).toThrow();
+    for (const input of [{ phone: "bad" }, { phone: "test@example.com" }, { name: "x".repeat(101) }, { review: "x".repeat(4001) }]) expect(() => validateGuestFeedback(form({ rating: "4", name: "Synthetic Guest", phone: "01712345678", ...input }))).toThrow();
   });
   test("only administrators can read, and enterprise scope cannot be unbounded", () => {
     expect(guestFeedbackScope(null)).toBeNull();

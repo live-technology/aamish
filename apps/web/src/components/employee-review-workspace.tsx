@@ -40,8 +40,8 @@ export function EmployeeReviewWorkspace({ schedules, today, onSaved, enterpriseN
   const [selectedId, setSelectedId] = useState(initialTarget?.id || "");
   const target = history.find((item) => item.id === selectedId) || initialTarget;
   const [query, setQuery] = useState("");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(history.at(-1)?.schedule_date || today);
+  const [toDate, setToDate] = useState(today);
   const [nowMs, setNowMs] = useState(0);
   const [rating, setRating] = useState(initialTarget?.review_rating || 0);
   const [comment, setComment] = useState(initialTarget?.review_comment || "");

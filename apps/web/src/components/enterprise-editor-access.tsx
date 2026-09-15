@@ -32,7 +32,7 @@ export function EnterpriseEditor({ enterprise, onClose, onSaved }: { enterprise:
     if (invalid) return setFailure({ title: "Enterprise not updated", message: clientErrorMessage(invalid, "Check every required field.") });
     setSaving(true); setFailure(null);
     try {
-      const response = await fetch("/api/admin/enterprises", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) });
+      const response = await fetch("/api/admin/enterprises", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...draft, logoUrl: draft.logoUrl === (enterprise.logo_url ?? null) ? undefined : draft.logoUrl }) });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) return setFailure({ title: "Enterprise not updated", message: clientErrorMessage(data.error, "The enterprise could not be updated."), requestId: data.requestId });
       await onSaved(); onClose();
