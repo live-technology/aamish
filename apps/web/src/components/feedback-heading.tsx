@@ -9,7 +9,6 @@ export function FeedbackHeading({ enterpriseName, logoUrl, showAamish = true }: 
       {logoUrl && <Image className={styles.enterpriseLogo} src={logoUrl} alt={`${enterpriseName} logo`} width={72} height={72} />}
       <p className={styles.enterpriseName}>{enterpriseName}</p>
     </div>
-    <Heading>A little feedback.<br />A better next meal.</Heading>
-    <p className={styles.description}>Tell us how we did, we’re listening</p>
+    <Heading>Tell us how we did, we’re listening</Heading>
   </header>;
 }
