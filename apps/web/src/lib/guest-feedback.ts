@@ -2,7 +2,7 @@ import { MealRequestError, normalizeContact } from "./meal-requests";
 
 export function validateGuestFeedback(form: FormData) {
   const rawRating = form.get("rating");
-  if (typeof rawRating !== "string" || !/^[1-5]$/.test(rawRating)) throw new MealRequestError("Please choose a rating from 1 to 5 stars.");
+  if (typeof rawRating !== "string" || !/^[1-5]$/.test(rawRating)) throw new MealRequestError("Please choose a rating from 1 to 5.");
   const anonymous = form.get("anonymous") === "true";
   const text = (key: string, max: number) => {
     const value = form.get(key);
@@ -15,6 +15,8 @@ export function validateGuestFeedback(form: FormData) {
   // Deliberately discard identity fields, even if a crafted request sends them.
   const name = anonymous ? null : text("name", 100);
   const rawPhone = anonymous ? null : text("phone", 50);
+  if (!anonymous && !name) throw new MealRequestError("Please enter your name or choose Stay anonymous.");
+  if (!anonymous && !rawPhone) throw new MealRequestError("Please enter your phone number or choose Stay anonymous.");
   let phone: string | null = null;
   if (rawPhone) {
     try {
