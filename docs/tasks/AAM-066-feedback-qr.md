@@ -5,7 +5,7 @@ An Aamish or enterprise administrator needs a ready-to-print feedback QR from th
 
 ## Acceptance
 - Download QR opens an accessible preview for the selected active enterprise.
-- Export a 1800×2400 PNG with the unchanged Aamish logo centered inside a scannable QR, enterprise name, “Tell us how we did, we’re listening” and “Please scan the QR to submit your feedback.”
+- Export a 1800×2250 PNG with the unchanged Aamish logo centered inside a scannable QR, enterprise name, “Tell us how we did, we’re listening” and “Please scan the QR to submit your feedback.”
 - Encode exactly the current enterprise feedback link; preserve the original URL and existing access controls.
 - Generate locally in the browser; handle generation errors and allow closing/retrying.
 - Responsive preview and a working PNG download for both administrator roles.
@@ -25,3 +25,5 @@ Open Guest feedback, select an active enterprise if applicable, choose Download 
 - Independent QR decoder reads the exported PNG back to the exact displayed URL. Permanent-host and dev-host URL lengths also decode at full and half resolution with the central logo intact.
 - No unexpected application errors. [Poster and responsive screenshots](../evidence/AAM-066/).
 - Limitation: this exports PNG only; final printed size/quality depends on the printer settings. Existing host and enterprise availability still govern the destination.
+
+Design refinement: remove the duplicate top logo and use one compact center badge. Quartile error correction reduces the permanent-host QR from 45×45 to 37×37 modules while preserving the same URL; independently decode the revised logo-overlaid exports.
