@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { Check, Copy, Download, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button, uiStyles } from "@/components/ui/primitives";
+import { FeedbackQrDialog } from "./feedback-qr-dialog";
 import styles from "./guest-feedback.module.css";
 
 const subscribe = () => () => {};
@@ -18,7 +19,7 @@ export function GuestFeedbackTools({ enterprises, selectedId, canSelect }: { ent
   const enterprise = enterprises.find(item => item.id === selectedId);
   return <section className={styles.sharingPanel} aria-label="Share a feedback form" aria-busy={pending}>
     <div className={styles.sharingHeader}>
-      <div><h2>Collect guest feedback</h2><p>{canSelect && !enterprise ? "Choose an enterprise to get its feedback link." : "Share the link or use it to create your event QR code."}</p></div>
+      <div><h2>Collect guest feedback</h2><p>{canSelect && !enterprise ? "Choose an enterprise to get its feedback link." : "Share the link or download a QR code for your event."}</p></div>
       {canSelect && <label className={styles.enterpriseFilter}>Enterprise<select value={selectedId || ""} disabled={pending} onChange={event => {
         const id = event.target.value;
         startTransition(() => router.push(id ? `/admin/guest-feedback?enterprise=${encodeURIComponent(id)}` : "/admin/guest-feedback"));
@@ -32,6 +33,7 @@ export function GuestFeedbackTools({ enterprises, selectedId, canSelect }: { ent
 
 function GuestFeedbackLink({ enterpriseId, enterpriseName }: { enterpriseId: string; enterpriseName: string }) {
   const origin = useSyncExternalStore(subscribe, readOrigin, serverOrigin);
+  const [qrOpen, setQrOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const path = `/feedback/${enterpriseId}`;
@@ -50,7 +52,9 @@ function GuestFeedbackLink({ enterpriseId, enterpriseName }: { enterpriseId: str
         catch { setError("Couldn’t copy automatically. Select and copy the URL above."); }
       }}>{copied ? <Check size={17} aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}{copied ? "Copied" : "Copy link"}</Button>
       <a className={`${uiStyles.button} ${uiStyles.secondary}`} href={path} target="_blank" rel="noreferrer">Open form <ExternalLink size={16} aria-hidden="true" /></a>
+      <Button className={styles.downloadQr} variant="secondary" disabled={!url} onClick={() => setQrOpen(true)}><Download size={17} aria-hidden="true" />Download QR</Button>
     </div>
+    {qrOpen && <FeedbackQrDialog url={url} enterpriseName={enterpriseName} enterpriseId={enterpriseId} onClose={() => setQrOpen(false)} />}
     <span className={styles.srOnly} role="status">{copied ? "Feedback link copied" : ""}</span>
     {error && <p className={styles.copyError} role="alert">{error}</p>}
   </div>;
