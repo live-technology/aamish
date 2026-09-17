@@ -1,0 +1,14 @@
+.backdrop { position: fixed; inset: 0; z-index: 100; background: #142a20a6; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.dialog { width: min(640px, 100%); max-height: calc(100dvh - 40px); display: flex; flex-direction: column; background: #fffdf9; border-radius: 20px; box-shadow: 0 24px 80px #10291f40; overflow: hidden; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid #e4e7e1; }
+.header h2 { margin: 0; font-size: 22px; }
+.header p { margin: 5px 0 0; font-size: 13px; color: #53645a; overflow-wrap: anywhere; }
+.content { overflow-y: auto; padding: 20px 24px; min-height: 0; }
+.poster { display: block; width: min(100%, 390px); height: auto; margin: auto; border-radius: 10px; border: 1px solid #e4e7e1; }
+.placeholder { padding: 70px 10px; text-align: center; color: #53645a; }
+.destination { font-size: 12px; line-height: 1.5; color: #53645a; overflow-wrap: anywhere; margin: 16px 0 0; }
+.destination a { color: #254d3c; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; border-top: 1px solid #e4e7e1; }
+.footer span { font-size: 12px; color: #53645a; }
+.footer a { text-decoration: none; white-space: nowrap; }
+@media(max-width: 480px) { .backdrop { padding: 12px; } .dialog { max-height: calc(100dvh - 24px); } .header,.content,.footer { padding: 16px; } .footer { flex-direction: column; gap: 10px; } .footer a,.footer button { width: 100%; } }
