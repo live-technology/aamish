@@ -13,7 +13,14 @@ export default async function QualityPage({ searchParams }: { searchParams: Prom
   if (session.role !== "SUPER_ADMIN") redirect(session.role === "ENTERPRISE_ADMIN" ? "/enterprise" : "/employee");
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
-  const filters = qualityFiltersFrom(await searchParams, today);
+  const params = await searchParams;
+  const filters = qualityFiltersFrom(params, today);
+  if (params.enterprise === undefined) {
+    const [daraz] = await db()<{ id: string }[]>`
+      SELECT id FROM enterprises WHERE slug='daraz-bangladesh-limited' AND status='ACTIVE' LIMIT 1
+    `;
+    filters.enterprise = daraz?.id ?? "";
+  }
   const [initialInsights, issues] = await Promise.all([
     loadQualityInsights(filters, null),
     db()<QualityIssue[]>`
